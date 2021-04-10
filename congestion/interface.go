@@ -19,6 +19,8 @@ type SendAlgorithm interface {
 	OnConnectionMigration()
 	RetransmissionDelay() time.Duration
 	SmoothedRTT() time.Duration
+	//SBD
+	UpdateGroupEpoch(group uint8, epoch uint16)
 
 	// Experiments
 	SetSlowStartLargeReduction(enabled bool)

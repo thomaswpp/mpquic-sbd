@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
-	"time"
+	"time"	
 
 	"github.com/lucas-clemente/quic-go/ackhandler"
 	"github.com/lucas-clemente/quic-go/congestion"
@@ -18,6 +18,8 @@ import (
 	"github.com/lucas-clemente/quic-go/internal/wire"
 	"github.com/lucas-clemente/quic-go/qerr"
 )
+
+
 
 type unpacker interface {
 	Unpack(publicHeaderBinary []byte, hdr *wire.PublicHeader, data []byte) (*unpackedPacket, error)
@@ -40,6 +42,39 @@ var (
 	newCryptoSetup       = handshake.NewCryptoSetup
 	newCryptoSetupClient = handshake.NewCryptoSetupClient
 )
+
+//SBD 
+type loss struct {
+	lossCount uint8
+	pathID protocol.PathID
+}
+
+type group map[protocol.PathID]uint8
+
+const (
+	SBD_T_INTERVAL float64 		 = 350.0
+	SBD_N      uint64  		     = 50
+	SBD_M      uint64  		     = 50
+	SBD_MAX_OBSERVATIONS uint8   = 10	
+	SBD_TIME_OUTLIER float64     = 30.0
+)
+
+//SBD Vars
+var ( 
+	mgroupsObservation 		[SBD_MAX_OBSERVATIONS]group
+	tempoDecorrente 		float64
+	tempo 					time.Time 
+	sbdObservationsCount 	uint8
+	sbdEpoch 				uint16
+	sbdId 					int
+	//SBD groups
+	flowGroups 				FlowGroups
+	groupsSBD 				[][]FlowGroups
+	sbd_accuracy			float64
+	sbd_count_acc			float64
+	timeStamp 				TimeStamp
+)
+
 
 type handshakeEvent struct {
 	encLevel protocol.EncryptionLevel
@@ -65,6 +100,10 @@ type session struct {
 	createPaths bool
 
 	streamsMap *streamsMap
+
+	//sbd statistics
+	timeIntervalSBD 	float64
+	numberInterval 		uint64
 
 	rttStats *congestion.RTTStats
 
@@ -127,6 +166,7 @@ type session struct {
 }
 
 var _ Session = &session{}
+
 
 // newSession makes a new session
 func newSession(
@@ -232,6 +272,9 @@ func (s *session) setup(
 	s.streamsMap = newStreamsMap(s.newStream, s.perspective, s.connectionParameters)
 	s.streamFramer = newStreamFramer(s.streamsMap, s.flowControlManager)
 	s.pathTimers = make(chan *path)
+
+	//SBD
+	timeStamp.Setup()
 
 	var err error
 	if s.perspective == protocol.PerspectiveServer {
@@ -369,6 +412,7 @@ runLoop:
 			// This is a bit unclean, but works properly, since the packet always
 			// begins with the public header and we never copy it.
 			putPacketBuffer(p.publicHeader.Raw)
+
 		case l, ok := <-aeadChanged:
 			if !ok { // the aeadChanged chan was closed. This means that the handshake is completed.
 				s.handshakeComplete = true
@@ -442,6 +486,8 @@ runLoop:
 	return closeErr.err
 }
 
+
+
 func (s *session) Context() context.Context {
 	return s.ctx
 }
@@ -470,6 +516,7 @@ func (s *session) idleTimeout() time.Duration {
 }
 
 func (s *session) handlePacketImpl(p *receivedPacket) error {
+
 	if s.perspective == protocol.PerspectiveClient {
 		diversificationNonce := p.publicHeader.DiversificationNonce
 		if len(diversificationNonce) > 0 {
@@ -482,7 +529,18 @@ func (s *session) handlePacketImpl(p *receivedPacket) error {
 		p.rcvTime = time.Now()
 	}
 
+	//SBD - compute time	
+	diff_time := float64(p.rcvTime.Sub(s.lastNetworkActivityTime))/float64(time.Millisecond)
+
+
+	// if diff_time < SBD_TIME_OUTLIER {
+		s.timeIntervalSBD += diff_time
+		tempoDecorrente += diff_time
+		tempo = p.rcvTime
+	// }
+
 	s.lastNetworkActivityTime = p.rcvTime
+
 	/// XXX (QDC): see if this should be brought at path level too
 	s.keepAlivePingSent = false
 
@@ -498,16 +556,26 @@ func (s *session) handlePacketImpl(p *receivedPacket) error {
 			return err
 		}
 	}
+
+
 	return pth.handlePacketImpl(p)
 }
 
-func (s *session) handleFrames(fs []wire.Frame, p *path) error {
+func (s *session) handleFrames(fs []wire.Frame, p *path, rcvTime time.Time ) error {
+	hasStreamFrame := false
+	lossCount := []loss{}
+	var ets uint64
 	for _, ff := range fs {
 		var err error
 		wire.LogFrame(ff, false)
 		switch frame := ff.(type) {
 		case *wire.StreamFrame:
 			err = s.handleStreamFrame(frame)
+			//SBD
+			hasStreamFrame = true
+			ets = frame.TimeStamp
+
+			lossCount = append(lossCount, loss{frame.LossCount, frame.PathID}) 
 		case *wire.AckFrame:
 			err = s.handleAckFrame(frame)
 		case *wire.ConnectionCloseFrame:
@@ -561,7 +629,200 @@ func (s *session) handleFrames(fs []wire.Frame, p *path) error {
 			}
 		}
 	}
+
+
+	if hasStreamFrame {
+		//SBD - compute OWD
+		ts_snd := timeStamp.DecodeADE(ets)
+		ts_rcv := (uint64(rcvTime.UnixNano()) / uint64(time.Microsecond))
+		owd := float64(ts_rcv - ts_snd) / 1000.0
+		// relativeOwd := math.Abs(rawOwd - p.rawOldOwd)
+		// p.rawOldOwd = rawOwd
+
+		// if relativeOwd < SBD_TIME_OUTLIER {		
+			s.computeSBD(owd, p, lossCount)
+		// }
+	}
+
 	return nil
+}
+
+func (s *session) mergeObservations() {
+
+	var together[20][10]uint8
+
+	// Count the number of times a pathid has been classified by a group
+	for i, _ := range mgroupsObservation {
+
+		for pi, group := range mgroupsObservation[i] {
+			
+			together[int(pi)][int(group)]++
+		}
+	}
+
+
+	s.pathsLock.RLock()
+	//Choose the group that appears most
+	for pi, _ := range s.paths {
+		
+		if pi == 0 {
+			continue
+		}
+
+		i     := int(pi)
+		group := 0
+		max   := -1
+
+		for j := 0; j < 10; j++ {
+		
+			count := int(together[i][j])
+
+			if  count > max {
+				max = count
+				group = j
+			}
+
+		}		
+		//update groups
+		s.paths[pi].group = uint8(group)
+		s.paths[pi].epoch = sbdEpoch
+	}
+
+
+	//accuracy
+	mode  := 1 // 0 - shared, 1 - non-shared
+	count := 0
+	congested := false
+	for pi, _ := range s.paths {
+		g1 := s.paths[pi].group
+		if pi == 0  || g1 == 0 {
+			continue
+		}
+		count = 0
+		for pi2, _ := range s.paths {
+			g2 := s.paths[pi2].group
+			congested = true
+			if pi2 == 0 || g2 == 0 || pi == pi2 {
+				continue
+			}
+			
+			if g1 == g2 {
+				count++
+			}
+			fmt.Println("Groups: ", pi, g1, pi2, g2, count)
+		}
+		break
+	}
+
+	if congested {
+		sbd_count_acc++
+		//mode non-shared
+		if (mode == 1) {
+			if count == 0 {
+				sbd_accuracy++
+			}
+
+		} else { //shared
+			if count >= 1 {
+				sbd_accuracy++
+			}
+		}
+		fmt.Println("Accuracy: ", sbd_accuracy/sbd_count_acc)
+	}
+
+	s.pathsLock.RUnlock()
+
+}
+
+func (s *session) computeSBD(owd float64, p *path, lossCount []loss) {
+
+	// timeDelay := tempoDecorrente
+
+	//SBD - compute statistics base	
+	p.pstats.ComputeStatisticsBase(owd, s.numberInterval)
+
+	// we just want to iterate once, but sometimes can iterate twice or more
+	for _, losses := range lossCount {
+		tmpPth := s.paths[losses.pathID]
+		tmpPth.pstats.ComputePacketLoss(uint64(losses.lossCount))
+	}
+	
+	//every T_INTERVAL compute path statistics sbd
+	if s.timeIntervalSBD >= SBD_T_INTERVAL {
+		
+		s.pathsLock.RLock()
+		
+		for k, _ := range s.paths {
+			s.paths[k].state = true
+		} 
+
+		s.pathsLock.RUnlock()
+
+		s.timeIntervalSBD = 0
+		s.numberInterval += 1		
+	}
+
+	var mgroup = make(group, 20)
+
+	if (p.state) {		
+
+
+		p.pstats.ComputeStatistics(s.numberInterval)
+		// p.pstats.PrintFile(p.pathID)
+		p.state = false
+
+		if s.numberInterval >= 2*SBD_M { // >= N			
+
+			var flowGroups FlowGroups
+
+			
+			// fmt.Println("==============================================================================================", s.numberInterval)
+			// fmt.Println(sbdEpoch, time.Now())
+			groupsSBD = flowGroups.FlowGroups(s)
+			
+			sbdObservationsCount++			
+
+			// fmt.Println("gruops: ", groupsSBD)
+			// flowGroups.PrintFile()
+
+			//create all path in mpgroup
+			s.pathsLock.RLock()
+			for pathID, _ := range s.paths {
+				if pathID == 0 {
+					continue
+				}
+				mgroup[pathID] = 0
+			}
+			s.pathsLock.RUnlock()
+
+			//classify each path
+			for i, groups := range groupsSBD {
+				for _, flow := range groups {
+					for _, path := range flow.pathID {
+						// fmt.Printf("fi: %d %d\n", path, uint8(i+1))
+						mgroup[path] 		= uint8(i+1)
+					}
+				}
+			}
+
+			mgroupsObservation[sbdId] = mgroup
+			sbdId += 1
+
+			// flowGroups.PrintGroupsFile(mgroup)
+
+			if sbdObservationsCount == SBD_MAX_OBSERVATIONS {
+				sbdEpoch++
+				sbdObservationsCount = 0
+				sbdId = 0
+				s.mergeObservations()
+			}
+			
+		}
+
+	}
+	
+	// p.pstats.PrintFileOWD(p.pathID, tempo, timeDelay, owd, mgroupsObservation[sbdId])
+
 }
 
 // handlePacket is called by the server with a new packet
@@ -587,6 +848,7 @@ func (s *session) handleStreamFrame(frame *wire.StreamFrame) error {
 		// ignore this StreamFrame
 		return nil
 	}
+
 	if frame.FinBit {
 		// Receiving end of stream, print stats about it
 		// Print client statistics about its paths
@@ -631,6 +893,11 @@ func (s *session) handleRstStreamFrame(frame *wire.RstStreamFrame) error {
 
 func (s *session) handleAckFrame(frame *wire.AckFrame) error {
 	pth := s.paths[frame.PathID]
+
+	//SBD - Read Groups
+	// fmt.Println("SessionGroups: ", frame.Groups)
+	// pth.classifier = frame.Groups
+
 	err := pth.sentPacketHandler.ReceivedAck(frame, pth.lastRcvdPacketNumber, pth.lastNetworkActivityTime)
 	if err == nil && pth.rttStats.SmoothedRTT() > s.rttStats.SmoothedRTT() {
 		// Update the session RTT, which comes to take the max RTT on all paths

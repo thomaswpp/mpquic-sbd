@@ -37,7 +37,7 @@ type ReceivedPacketHandler interface {
 	SetLowerLimit(protocol.PacketNumber)
 
 	GetAlarmTimeout() time.Time
-	GetAckFrame() *wire.AckFrame
+	GetAckFrame(groups uint8, epoch uint16) *wire.AckFrame
 
 	GetClosePathFrame() *wire.ClosePathFrame
 

@@ -76,6 +76,11 @@ func NewCubicSender(clock Clock, rttStats *RTTStats, reno bool, initialCongestio
 	}
 }
 
+func (c *cubicSender) UpdateGroupEpoch(group uint8, epoch uint16) {
+	//SBD
+	//pass
+}
+
 func (c *cubicSender) TimeUntilSend(now time.Time, bytesInFlight protocol.ByteCount) time.Duration {
 	if c.InRecovery() {
 		// PRR is used when in recovery.

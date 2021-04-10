@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	// "time"
 
 	"github.com/lucas-clemente/quic-go/ackhandler"
 	"github.com/lucas-clemente/quic-go/internal/handshake"
@@ -164,6 +165,7 @@ func (p *packetPacker) PackPacket(pth *path) (*packedPacket, error) {
 	if len(payloadFrames) == 0 {
 		return nil, nil
 	}
+	
 	// Don't send out packets that only contain a StopWaitingFrame
 	if len(payloadFrames) == 1 && p.stopWaiting[pth.pathID] != nil {
 		return nil, nil
@@ -232,6 +234,7 @@ func (p *packetPacker) composeNextPacket(
 
 	for len(p.controlFrames) > 0 {
 		frame := p.controlFrames[len(p.controlFrames)-1]
+
 		minLength, err := frame.MinLength(p.version)
 		if err != nil {
 			return nil, err
@@ -239,6 +242,7 @@ func (p *packetPacker) composeNextPacket(
 		if payloadLength+minLength > maxFrameSize {
 			break
 		}
+
 		payloadFrames = append(payloadFrames, frame)
 		payloadLength += minLength
 		p.controlFrames = p.controlFrames[:len(p.controlFrames)-1]
@@ -258,12 +262,33 @@ func (p *packetPacker) composeNextPacket(
 	maxFrameSize += 2
 
 	fs := p.streamFramer.PopStreamFrames(maxFrameSize - payloadLength)
+
 	if len(fs) != 0 {
 		fs[len(fs)-1].DataLenPresent = false
 	}
 
+	//SBD - send losscount within StreamFrame
+	_, _, sntLost := pth.sentPacketHandler.GetStatistics()	
+
 	// TODO: Simplify
+	onlyOne := false
+	// ts := uint64(int64(time.Nanosecond) * time.Now().UnixNano() / int64(time.Microsecond))
+	var timeStamp TimeStamp
+	timeStamp.Setup()
+	encodeTs := timeStamp.EncodeADE(timeStamp.TimeStamp())	
 	for _, f := range fs {
+		f.TimeStamp = encodeTs
+		
+		//There may be retransmitted packets with non-zero LossCount values
+		if f.LossCount == 0 && !onlyOne {
+			f.LossCount = uint8(sntLost - pth.lastSentLossCount)
+			f.PathID = pth.pathID
+			// losspath := uint16(f.PathID)
+			// f.Losspath = (losspath << 8) | uint16(f.LossCount)
+			// fmt.Println(f.PathID, f.LossCount, f.Losspath)
+			pth.lastSentLossCount = sntLost 
+			onlyOne = true
+		}		
 		payloadFrames = append(payloadFrames, f)
 	}
 
@@ -333,6 +358,7 @@ func (p *packetPacker) writeAndSealPacket(
 			return nil, err
 		}
 	}
+
 	if protocol.ByteCount(buffer.Len()+sealer.Overhead()) > protocol.MaxPacketSize {
 		return nil, errors.New("PacketPacker BUG: packet too large")
 	}
@@ -355,4 +381,3 @@ func (p *packetPacker) canSendData(encLevel protocol.EncryptionLevel) bool {
 	}
 	return encLevel == protocol.EncryptionForwardSecure
 }
-

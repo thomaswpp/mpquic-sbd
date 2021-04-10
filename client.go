@@ -283,6 +283,7 @@ func (c *client) handlePacket(rcvRawPacket *receivedRawPacket) {
 	if !rcvRawPacket.rcvTime.IsZero() {
 		rcvTime = rcvRawPacket.rcvTime
 	}
+
 	if rcvRawPacket.rcvPconn != nil {
 		pconn = rcvRawPacket.rcvPconn
 	}

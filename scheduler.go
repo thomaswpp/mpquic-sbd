@@ -9,6 +9,7 @@ import (
 	"github.com/lucas-clemente/quic-go/internal/wire"
 )
 
+
 type scheduler struct {
 	// XXX Currently round-robin based, inspired from MPTCP scheduler
 	quotas map[protocol.PathID]uint
@@ -218,10 +219,14 @@ func (sch *scheduler) performPacketSending(s *session, windowUpdateFrames []*wir
 	if pth.sentPacketHandler.ShouldSendRetransmittablePacket() {
 		s.packer.QueueControlFrame(&wire.PingFrame{}, pth)
 	}
+
 	packet, err := s.packer.PackPacket(pth)
+	
+
 	if err != nil || packet == nil {
 		return nil, false, err
 	}
+
 	if err = s.sendPackedPacket(packet, pth); err != nil {
 		return nil, false, err
 	}
@@ -304,6 +309,7 @@ func (sch *scheduler) ackRemainingPaths(s *session, totalWindowUpdateFrames []*w
 				return err
 			}
 			err = s.sendPackedPacket(packet, pthTmp)
+
 			if err != nil {
 				return err
 			}
@@ -363,7 +369,6 @@ func (sch *scheduler) sendPacket(s *session) error {
 
 		// XXX Some automatic ACK generation should be done someway
 		var ack *wire.AckFrame
-
 		ack = pth.GetAckFrame()
 		if ack != nil {
 			s.packer.QueueControlFrame(ack, pth)

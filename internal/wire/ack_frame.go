@@ -32,6 +32,9 @@ type AckFrame struct {
 	// this field Will not be set for received ACKs frames
 	PacketReceivedTime time.Time
 	DelayTime          time.Duration
+
+	Groups 			   uint8
+	Epoch 			   uint16
 }
 
 // ParseAckFrame reads an ACK frame
@@ -39,6 +42,7 @@ func ParseAckFrame(r *bytes.Reader, version protocol.VersionNumber) (*AckFrame, 
 	frame := &AckFrame{}
 
 	typeByte, err := r.ReadByte()
+
 	if err != nil {
 		return nil, err
 	}
@@ -196,6 +200,18 @@ func ParseAckFrame(r *bytes.Reader, version protocol.VersionNumber) (*AckFrame, 
 			}
 		}
 	}
+
+	//SBD - Read group value
+	frame.Groups, err = r.ReadByte()
+	if err != nil {
+		return nil, err
+	}
+
+	frame.Epoch, err = utils.GetByteOrder(version).ReadUint16(r)
+	if err != nil {
+		return nil, err
+	}
+	
 	return frame, nil
 }
 
@@ -343,12 +359,17 @@ func (f *AckFrame) Write(b *bytes.Buffer, version protocol.VersionNumber) error 
 	}
 
 	b.WriteByte(0) // no timestamps
+
+	//SBD - Write value of groups
+	b.WriteByte(f.Groups)
+	utils.GetByteOrder(version).WriteUint16(b, uint16(f.Epoch))	
+	
 	return nil
 }
 
 // MinLength of a written frame
 func (f *AckFrame) MinLength(version protocol.VersionNumber) (protocol.ByteCount, error) {
-	length := protocol.ByteCount(1 + 2 + 1) // 1 TypeByte, 2 ACK delay time, 1 Num Timestamp
+	length := protocol.ByteCount(1 + 2 + 1 + 1 + 2) // 1 TypeByte, 2 ACK delay time, 1 Num Timestamp, 1 Group (SBD changes), 2 Epoch (SBD changes)
 	length += protocol.ByteCount(protocol.GetPacketNumberLength(f.LargestAcked))
 
 	missingSequenceNumberDeltaLen := protocol.ByteCount(f.getMissingSequenceNumberDeltaLen())

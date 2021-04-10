@@ -122,16 +122,19 @@ func (h *receivedPacketHandler) maybeQueueAck(packetNumber protocol.PacketNumber
 	}
 }
 
-func (h *receivedPacketHandler) GetAckFrame() *wire.AckFrame {
+func (h *receivedPacketHandler) GetAckFrame(groups uint8, epoch uint16) *wire.AckFrame {
 	if !h.ackQueued && (h.ackAlarm.IsZero() || h.ackAlarm.After(time.Now())) {
 		return nil
 	}
 
+	//SBD = Send Groups
 	ackRanges := h.packetHistory.GetAckRanges()
 	ack := &wire.AckFrame{
 		LargestAcked:       h.largestObserved,
 		LowestAcked:        ackRanges[len(ackRanges)-1].First,
 		PacketReceivedTime: h.largestObservedReceivedTime,
+		Groups:							groups,
+		Epoch:							epoch,
 	}
 
 	if len(ackRanges) > 1 {

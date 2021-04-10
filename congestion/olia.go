@@ -18,6 +18,7 @@ type Olia struct {
 	epsilonNum int
 	epsilonDen uint32
 	sndCwndCnt int
+
 	// We need to keep a reference to all paths
 }
 

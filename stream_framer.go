@@ -3,7 +3,7 @@ package quic
 import (
 	"net"
 	"time"
-
+	
 	"github.com/lucas-clemente/quic-go/internal/flowcontrol"
 	"github.com/lucas-clemente/quic-go/internal/protocol"
 	"github.com/lucas-clemente/quic-go/internal/utils"
@@ -171,7 +171,8 @@ func (f *streamFramer) maybePopNormalFrames(maxBytes protocol.ByteCount) (res []
 			return true, nil
 		}
 
-		frame.StreamID = s.streamID
+		frame.StreamID = s.streamID		
+
 		// not perfect, but thread-safe since writeOffset is only written when getting data
 		frame.Offset = s.writeOffset
 		frameHeaderBytes, _ := frame.MinLength(protocol.VersionWhatever) // can never error
@@ -179,6 +180,7 @@ func (f *streamFramer) maybePopNormalFrames(maxBytes protocol.ByteCount) (res []
 			return false, nil // theoretically, we could find another stream that fits, but this is quite unlikely, so we stop here
 		}
 		maxLen := maxBytes - currentLen - frameHeaderBytes
+
 
 		var sendWindowSize protocol.ByteCount
 		lenStreamData := s.lenOfDataForWriting()
@@ -221,14 +223,17 @@ func (f *streamFramer) maybePopNormalFrames(maxBytes protocol.ByteCount) (res []
 			f.blockedFrameQueue = append(f.blockedFrameQueue, &wire.BlockedFrame{StreamID: s.StreamID()})
 		}
 
+
 		res = append(res, frame)
 		currentLen += frameHeaderBytes + frame.DataLen()
+
 
 		if currentLen == maxBytes {
 			return false, nil
 		}
 
 		frame = &wire.StreamFrame{DataLenPresent: true}
+
 		return true, nil
 	}
 

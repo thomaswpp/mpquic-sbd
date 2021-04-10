@@ -3,6 +3,7 @@ package quic
 import (
 	"time"
 
+	"github.com/lucas-clemente/quic-go/sbd"
 	"github.com/lucas-clemente/quic-go/ackhandler"
 	"github.com/lucas-clemente/quic-go/congestion"
 	"github.com/lucas-clemente/quic-go/qerr"
@@ -35,6 +36,16 @@ type path struct {
 
 	sentPacket          chan struct{}
 
+	//Used to calculate the statistics about path
+	pstats *sbd.PathStats
+	group uint8 
+	epoch uint16
+	rawOldOwd			float64
+	lossCount       uint8	
+	lastTimeStreamFrame uint64
+	lastSentLossCount uint64
+	state bool
+	
 	// It is now the responsibility of the path to keep its packet number
 	packetNumberGenerator *packetNumberGenerator
 
@@ -52,7 +63,10 @@ type path struct {
 
 // setup initializes values that are independent of the perspective
 func (p *path) setup(oliaSenders map[protocol.PathID]*congestion.OliaSender) {
+
 	p.rttStats = &congestion.RTTStats{}
+
+	p.pstats = &sbd.PathStats{}
 
 	var cong congestion.SendAlgorithm
 
@@ -65,6 +79,9 @@ func (p *path) setup(oliaSenders map[protocol.PathID]*congestion.OliaSender) {
 
 	now := time.Now()
 
+	//SBD
+	p.state = false
+
 	p.sentPacketHandler = sentPacketHandler
 	p.receivedPacketHandler = ackhandler.NewReceivedPacketHandler(p.sess.version)
 
@@ -76,6 +93,8 @@ func (p *path) setup(oliaSenders map[protocol.PathID]*congestion.OliaSender) {
 
 	p.timer = utils.NewTimer()
 	p.lastNetworkActivityTime = now
+
+	p.pstats = sbd.NewPathStats(p.pstats.Skewness, p.pstats.Variance, p.pstats.Loss, p.pstats.Freq, p.pstats.MeanOwd, p.pstats.MeanDelay)
 
 	p.open.Set(true)
 	p.potentiallyFailed.Set(false)
@@ -132,7 +151,8 @@ func (p *path) GetStopWaitingFrame(force bool) *wire.StopWaitingFrame {
 }
 
 func (p *path) GetAckFrame() *wire.AckFrame {
-	ack := p.receivedPacketHandler.GetAckFrame()
+	//SBD change function GetAckFrame, transfer groups rating
+	ack := p.receivedPacketHandler.GetAckFrame(p.group, p.epoch)
 	if ack != nil {
 		ack.PathID = p.pathID
 	}
@@ -185,6 +205,7 @@ func (p *path) handlePacketImpl(pkt *receivedPacket) error {
 	if !pkt.rcvTime.IsZero() {
 		p.lastNetworkActivityTime = pkt.rcvTime
 	}
+
 	hdr := pkt.publicHeader
 	data := pkt.data
 
@@ -233,7 +254,7 @@ func (p *path) handlePacketImpl(pkt *receivedPacket) error {
 		return err
 	}
 
-	return p.sess.handleFrames(packet.frames, p)
+	return p.sess.handleFrames(packet.frames, p, p.lastNetworkActivityTime)
 }
 
 func (p *path) onRTO(lastSentTime time.Time) bool {

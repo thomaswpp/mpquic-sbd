@@ -155,6 +155,7 @@ func (h *sentPacketHandler) SentPacket(packet *Packet) error {
 
 	packet.Frames = stripNonRetransmittableFrames(packet.Frames)
 	isRetransmittable := len(packet.Frames) != 0
+	
 
 	if isRetransmittable {
 		packet.SendTime = now
@@ -181,6 +182,11 @@ func (h *sentPacketHandler) ReceivedAck(ackFrame *wire.AckFrame, withPacketNumbe
 	if ackFrame.LargestAcked > h.lastSentPacketNumber {
 		return errAckForUnsentPacket
 	}
+
+
+	//SBD
+	h.congestion.UpdateGroupEpoch(ackFrame.Groups, ackFrame.Epoch)
+
 
 	// duplicate or out-of-order ACK
 	if withPacketNumber <= h.largestReceivedPacketWithAck {
@@ -275,6 +281,7 @@ func (h *sentPacketHandler) determineNewlyAckedPackets(ackFrame *wire.AckFrame) 
 		if packetNumber < ackFrame.LowestAcked {
 			continue
 		}
+
 		// Break after LargestAcked is reached
 		if packetNumber > ackFrame.LargestAcked {
 			break
