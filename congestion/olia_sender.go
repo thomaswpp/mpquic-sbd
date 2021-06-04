@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	GROUP_HISTORY_SIZE uint8 = 8
+	GROUP_HISTORY_SIZE uint8 = 20
 )
 
 type GroupItem struct {

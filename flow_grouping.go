@@ -17,18 +17,12 @@ var (
 
 const (
     CONGESTION_THRESHOLD        float64 = 0.1  // c_s
-    // CONGESTION_THRESHOLD        float64 = 0.4  // c_s
     KEYFREQ_DELTA_THRESHOLD     float64 = 0.1  // p_f
-    // KEYFREQ_DELTA_THRESHOLD     float64 = 0.3  // p_f
     LOSS_DELTA_THRESHOLD        float64 = 0.1  // p_d (difference in subflows' loss to be in same group)
-    // LOSS_DELTA_THRESHOLD        float64 = 0.3  // p_d (difference in subflows' loss to be in same group)
     SKEWNESS_DELTA_THRESHOLD    float64 = 0.15 // p_s
-    // SKEWNESS_DELTA_THRESHOLD    float64 = 0.35 // p_s
     VARIANCE_DELTA_THRESHOLD    float64 = 0.1  // p_mad
-    // VARIANCE_DELTA_THRESHOLD    float64 = 0.3  // p_mad
     F                           float64 = 20
     HYSTERESIS_THRESHOLD        float64 = 0.3 // c_h
-    // HYSTERESIS_THRESHOLD        float64 = 0.6 // c_h
     LOSS_THRESHOLD              float64 = 0.1 // p_l
 )
 
@@ -60,9 +54,9 @@ func max(arr []protocol.PathID) (int) {
 func (fg *FlowGroups) setup(s *session) {
 
 
-    for k, _ := range s.paths {
-      if k != 0 {
-        fg.pathID = append(fg.pathID, k)
+    for pi, _ := range s.paths {
+      if pi != 0 {
+          fg.pathID = append(fg.pathID, pi)
       }
     }
 

@@ -259,5 +259,8 @@ func maybeSplitOffFrame(frame *wire.StreamFrame, n protocol.ByteCount) *wire.Str
 		Offset:         frame.Offset,
 		Data:           frame.Data[:n],
 		DataLenPresent: frame.DataLenPresent,
+		LossCount:		0,
+		PathID:			frame.PathID,
+		TimeStamp: 		frame.TimeStamp,
 	}
 }

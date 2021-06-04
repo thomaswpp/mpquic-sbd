@@ -43,36 +43,56 @@ var (
 	newCryptoSetupClient = handshake.NewCryptoSetupClient
 )
 
-//SBD 
-type loss struct {
-	lossCount uint8
-	pathID protocol.PathID
-}
+// //SBD 
+// type loss struct {
+// 	lossCount uint8
+// 	pathID protocol.PathID
+// }
 
-type group map[protocol.PathID]uint8
+// type sbd struct {
+//    owd float64
+//    p *path
+//    lossCount []loss
+// }
 
-const (
-	SBD_T_INTERVAL float64 		 = 350.0
-	SBD_N      uint64  		     = 50
-	SBD_M      uint64  		     = 50
-	SBD_MAX_OBSERVATIONS uint8   = 10	
-	SBD_TIME_OUTLIER float64     = 30.0
-)
+// type group map[protocol.PathID]uint8
 
-//SBD Vars
-var ( 
-	mgroupsObservation 		[SBD_MAX_OBSERVATIONS]group
-	tempoDecorrente 		float64
-	tempo 					time.Time 
-	sbdObservationsCount 	uint8
-	sbdEpoch 				uint16
-	sbdId 					int
-	//SBD groups
-	flowGroups 				FlowGroups
-	groupsSBD 				[][]FlowGroups
-	sbd_accuracy			float64
-	sbd_count_acc			float64
+// const (
+// 	SBD_T_INTERVAL float64 		 = 350.0
+// 	SBD_N      uint64  		     = 50
+// 	SBD_M      uint64  		     = 50
+// 	SBD_MAX_OBSERVATIONS uint8   = 10	
+// 	SBD_TIME_OUTLIER float64     = 30.0
+// )
+
+// //SBD Vars
+// var ( 
+// 	mgroupsObservation 		[SBD_MAX_OBSERVATIONS]group
+// 	tempoDecorrente 		float64
+// 	tempo 					time.Time 
+// 	sbdObservationsCount 	uint8
+// 	sbdEpoch 				uint16
+// 	sbdId 					int
+// 	//SBD groups
+// 	flowGroups 				FlowGroups
+// 	groupsSBD 				[][]FlowGroups
+// 	sbd_accuracy			float64
+// 	sbd_count_acc			float64
+// 	sbd_count_equal         float64
+// 	sbd_count_diff          float64
+
+// 	sbd_accuracy_2			float64
+// 	sbd_count_acc_2			float64
+// 	sbd_count_equal_2       float64
+// 	sbd_count_diff_2        float64
+
+// 	timeStamp 				TimeStamp
+// )
+
+var (
+
 	timeStamp 				TimeStamp
+	computeSbd 				Sbd
 )
 
 
@@ -275,6 +295,10 @@ func (s *session) setup(
 
 	//SBD
 	timeStamp.Setup()
+
+	go computeSbd.computeSBD(s)
+
+	go computeSbd.grouping(s)
 
 	var err error
 	if s.perspective == protocol.PerspectiveServer {
@@ -563,7 +587,7 @@ func (s *session) handlePacketImpl(p *receivedPacket) error {
 
 func (s *session) handleFrames(fs []wire.Frame, p *path, rcvTime time.Time ) error {
 	hasStreamFrame := false
-	lossCount := []loss{}
+	lossCount := []Loss{}
 	var ets uint64
 	for _, ff := range fs {
 		var err error
@@ -575,7 +599,7 @@ func (s *session) handleFrames(fs []wire.Frame, p *path, rcvTime time.Time ) err
 			hasStreamFrame = true
 			ets = frame.TimeStamp
 
-			lossCount = append(lossCount, loss{frame.LossCount, frame.PathID}) 
+			lossCount = append(lossCount, Loss{frame.LossCount, frame.PathID}) 
 		case *wire.AckFrame:
 			err = s.handleAckFrame(frame)
 		case *wire.ConnectionCloseFrame:
@@ -638,192 +662,340 @@ func (s *session) handleFrames(fs []wire.Frame, p *path, rcvTime time.Time ) err
 		owd := float64(ts_rcv - ts_snd) / 1000.0
 		// relativeOwd := math.Abs(rawOwd - p.rawOldOwd)
 		// p.rawOldOwd = rawOwd
-
 		// if relativeOwd < SBD_TIME_OUTLIER {		
-			s.computeSBD(owd, p, lossCount)
+		// sbd.ComputeSBD(s)
 		// }
+		sbdChanStruct <- Sbd{owd, p, lossCount}
 	}
 
 	return nil
 }
 
-func (s *session) mergeObservations() {
+// func computeAccuracy2(mgroup group) {
 
-	var together[20][10]uint8
+// 	mode  		:= 1 // 0 - shared, 1 - non-shared
+// 	count 		:= 0
+// 	congested 	:= false
+// 	var arr [3]int 
 
-	// Count the number of times a pathid has been classified by a group
-	for i, _ := range mgroupsObservation {
-
-		for pi, group := range mgroupsObservation[i] {
-			
-			together[int(pi)][int(group)]++
-		}
-	}
-
-
-	s.pathsLock.RLock()
-	//Choose the group that appears most
-	for pi, _ := range s.paths {
-		
-		if pi == 0 {
-			continue
-		}
-
-		i     := int(pi)
-		group := 0
-		max   := -1
-
-		for j := 0; j < 10; j++ {
-		
-			count := int(together[i][j])
-
-			if  count > max {
-				max = count
-				group = j
-			}
-
-		}		
-		//update groups
-		s.paths[pi].group = uint8(group)
-		s.paths[pi].epoch = sbdEpoch
-	}
-
-
-	//accuracy
-	mode  := 1 // 0 - shared, 1 - non-shared
-	count := 0
-	congested := false
-	for pi, _ := range s.paths {
-		g1 := s.paths[pi].group
-		if pi == 0  || g1 == 0 {
-			continue
-		}
-		count = 0
-		for pi2, _ := range s.paths {
-			g2 := s.paths[pi2].group
-			congested = true
-			if pi2 == 0 || g2 == 0 || pi == pi2 {
-				continue
-			}
-			
-			if g1 == g2 {
-				count++
-			}
-			fmt.Println("Groups: ", pi, g1, pi2, g2, count)
-		}
-		break
-	}
-
-	if congested {
-		sbd_count_acc++
-		//mode non-shared
-		if (mode == 1) {
-			if count == 0 {
-				sbd_accuracy++
-			}
-
-		} else { //shared
-			if count >= 1 {
-				sbd_accuracy++
-			}
-		}
-		fmt.Println("Accuracy: ", sbd_accuracy/sbd_count_acc)
-	}
-
-	s.pathsLock.RUnlock()
-
-}
-
-func (s *session) computeSBD(owd float64, p *path, lossCount []loss) {
-
-	// timeDelay := tempoDecorrente
-
-	//SBD - compute statistics base	
-	p.pstats.ComputeStatisticsBase(owd, s.numberInterval)
-
-	// we just want to iterate once, but sometimes can iterate twice or more
-	for _, losses := range lossCount {
-		tmpPth := s.paths[losses.pathID]
-		tmpPth.pstats.ComputePacketLoss(uint64(losses.lossCount))
-	}
 	
-	//every T_INTERVAL compute path statistics sbd
-	if s.timeIntervalSBD >= SBD_T_INTERVAL {
-		
-		s.pathsLock.RLock()
-		
-		for k, _ := range s.paths {
-			s.paths[k].state = true
-		} 
+// 	for p, g := range mgroup {
 
-		s.pathsLock.RUnlock()
-
-		s.timeIntervalSBD = 0
-		s.numberInterval += 1		
-	}
-
-	var mgroup = make(group, 20)
-
-	if (p.state) {		
-
-
-		p.pstats.ComputeStatistics(s.numberInterval)
-		// p.pstats.PrintFile(p.pathID)
-		p.state = false
-
-		if s.numberInterval >= 2*SBD_M { // >= N			
-
-			var flowGroups FlowGroups
-
-			
-			// fmt.Println("==============================================================================================", s.numberInterval)
-			// fmt.Println(sbdEpoch, time.Now())
-			groupsSBD = flowGroups.FlowGroups(s)
-			
-			sbdObservationsCount++			
-
-			// fmt.Println("gruops: ", groupsSBD)
-			// flowGroups.PrintFile()
-
-			//create all path in mpgroup
-			s.pathsLock.RLock()
-			for pathID, _ := range s.paths {
-				if pathID == 0 {
-					continue
-				}
-				mgroup[pathID] = 0
-			}
-			s.pathsLock.RUnlock()
-
-			//classify each path
-			for i, groups := range groupsSBD {
-				for _, flow := range groups {
-					for _, path := range flow.pathID {
-						// fmt.Printf("fi: %d %d\n", path, uint8(i+1))
-						mgroup[path] 		= uint8(i+1)
-					}
-				}
-			}
-
-			mgroupsObservation[sbdId] = mgroup
-			sbdId += 1
-
-			// flowGroups.PrintGroupsFile(mgroup)
-
-			if sbdObservationsCount == SBD_MAX_OBSERVATIONS {
-				sbdEpoch++
-				sbdObservationsCount = 0
-				sbdId = 0
-				s.mergeObservations()
-			}
-			
-		}
-
-	}
+// 		if p == 0 {
+// 			continue
+// 		}
+// 		arr[g]++
+// 		fmt.Println("Path: ", p, g)
+// 	}
 	
-	// p.pstats.PrintFileOWD(p.pathID, tempo, timeDelay, owd, mgroupsObservation[sbdId])
+// 	for _, a := range arr[1:] {
+		
+// 		if a != 0 {
+// 			congested = true
+// 		}
 
-}
+// 		if a >= 2 {
+// 			count++
+// 		}		
+
+// 	}
+
+
+// 	fmt.Println("Freq: ", arr)
+
+// 	switch count {
+// 		case 0:
+// 			sbd_count_diff_2++
+// 		case 1:
+// 			sbd_count_equal_2++		
+// 	}
+
+// 	nsb_acc := sbd_count_diff_2 / (sbd_count_equal_2 + sbd_count_diff_2)
+// 	fmt.Println("General Accuracy: ", nsb_acc, sbd_count_equal_2, sbd_count_diff_2)
+
+// 	if congested {
+// 		sbd_count_acc_2++
+// 		//mode non-shared
+// 		if (mode == 1) {
+// 			if count == 0 {
+// 				sbd_accuracy_2++
+// 			}
+
+// 		} else { //shared
+// 			if count >= 1 {
+// 				sbd_accuracy_2++
+// 			}
+// 		}		
+// 		fmt.Println("Accuracy: ", sbd_accuracy_2/sbd_count_acc_2, sbd_accuracy_2, sbd_count_acc_2)
+// 	}
+
+// }
+
+// func (s *session) computeAccuracy() {
+
+// 	mode  		:= 1 // 0 - shared, 1 - non-shared
+// 	count 		:= 0
+// 	congested 	:= false
+// 	var arr [3]int 
+
+
+// 	fmt.Println("Merge: =================")
+
+// 	// s.pathsLock.RLock()
+// 	for pi, _ := range s.paths {
+
+// 		if pi == 0 {
+// 			continue
+// 		}
+// 		arr[s.paths[pi].group]++
+// 		fmt.Println("Path: ", pi, s.paths[pi].group)
+// 	}
+// 	// s.pathsLock.RUnlock()
+	
+// 	for _, a := range arr[1:] {
+		
+// 		if a != 0 {
+// 			congested = true
+// 		}
+
+// 		if a >= 2 {
+// 			count++
+// 		}		
+
+// 	}
+
+
+// 	fmt.Println("Freq: ", arr)
+
+// 	switch count {
+// 		case 0:
+// 			sbd_count_diff++
+// 		case 1:
+// 			sbd_count_equal++		
+// 	}
+
+// 	nsb_acc := sbd_count_diff / (sbd_count_equal + sbd_count_diff)
+// 	fmt.Println("General Accuracy: ", nsb_acc, sbd_count_equal, sbd_count_diff)
+
+// 	if congested {
+// 		sbd_count_acc++
+// 		//mode non-shared
+// 		if (mode == 1) {
+// 			if count == 0 {
+// 				sbd_accuracy++
+// 			}
+
+// 		} else { //shared
+// 			if count >= 1 {
+// 				sbd_accuracy++
+// 			}
+// 		}		
+// 		fmt.Println("Accuracy: ", sbd_accuracy/sbd_count_acc, sbd_accuracy, sbd_count_acc)
+// 	}
+// 	fmt.Println("Fim Merge: =================")
+// }
+
+// func (s *session) mergeObservations() {
+
+// 	var together[20][10]uint8
+
+// 	// Count the number of times a pathid has been classified by a group
+// 	for i, _ := range mgroupsObservation {
+
+// 		for pi, group := range mgroupsObservation[i] {
+			
+// 			together[int(pi)][int(group)]++
+// 		}
+// 	}
+
+
+// 	//Choose the group that appears most
+// 	for pi, _ := range mgroupsObservation[0] {
+		
+// 		if pi == 0 {
+// 			continue
+// 		}
+
+// 		i     := int(pi)
+// 		group := 0
+// 		max   := -1
+
+// 		for j := 0; j < int(SBD_MAX_OBSERVATIONS); j++ {
+		
+// 			count := int(together[i][j])
+
+// 			if  count > max {
+// 				max = count
+// 				group = j
+// 			}
+
+// 		}
+		
+// 		//update groups
+// 		// s.pathsLock.RLock()
+
+// 		s.paths[pi].group = uint8(group)
+// 		s.paths[pi].epoch = sbdEpoch
+		
+// 		// s.pathsLock.RUnlock()
+// 	}
+
+// 	s.computeAccuracy()	
+
+// }
+
+// func (s *session) grouping(p *path) {
+
+// 	var mgroup = make(group, 20)
+
+// 	p.pstats.ComputeStatistics(s.numberInterval)
+// 	// p.pstats.PrintFile(p.pathID)
+// 	p.state = false
+
+// 	if s.numberInterval >= 2*SBD_M { // >= N			
+
+// 		var flowGroups FlowGroups
+
+		
+// 		// fmt.Println("==============================================================================================", s.numberInterval)
+// 		// fmt.Println(sbdEpoch, time.Now())
+// 		groupsSBD = flowGroups.FlowGroups(s)
+		
+// 		sbdObservationsCount++			
+
+// 		// fmt.Println("gruops: ", groupsSBD)
+// 		// flowGroups.PrintFile()
+
+// 		//create all path in mpgroup
+// 		// s.pathsLock.RLock()
+// 		for pathID, _ := range s.paths {
+// 			if pathID == 0 {
+// 				continue
+// 			}
+// 			mgroup[pathID] = 0
+// 		}
+// 		// s.pathsLock.RUnlock()
+
+// 		//classify each path
+// 		for i, groups := range groupsSBD {
+// 			for _, flow := range groups {
+// 				for _, path := range flow.pathID {
+// 					// fmt.Printf("fi: %d %d\n", path, uint8(i+1))
+// 					mgroup[path] 		= uint8(i+1)
+// 				}
+// 			}
+// 		}
+
+// 		computeAccuracy2(mgroup)
+
+// 		mgroupsObservation[sbdId] = mgroup
+// 		sbdId += 1
+
+// 		// flowGroups.PrintGroupsFile(mgroup)
+
+// 		if sbdObservationsCount == SBD_MAX_OBSERVATIONS {
+// 			sbdEpoch++
+// 			sbdObservationsCount = 0
+// 			sbdId = 0
+// 			// s.mergeObservations()
+// 		}
+// 	}
+		
+// }
+
+// func (s *session) computeSBD(owd float64, p *path, lossCount []loss) {
+
+// 	// timeDelay := tempoDecorrente	
+	
+// 	//every T_INTERVAL compute path statistics sbd
+// 	if s.timeIntervalSBD > SBD_T_INTERVAL {
+		
+// 		// s.pathsLock.RLock()
+		
+// 		for k, _ := range s.paths {
+// 			s.paths[k].state = true
+// 		} 
+
+// 		// s.pathsLock.RUnlock()
+
+// 		s.timeIntervalSBD = 0
+// 		s.numberInterval += 1		
+// 	}
+
+
+// 	if (p.state) {		
+
+// 		s.grouping(p)
+
+// 		// var mgroup = make(group, 20)
+
+// 		// p.pstats.ComputeStatistics(s.numberInterval)
+// 		// // p.pstats.PrintFile(p.pathID)
+// 		// p.state = false
+
+// 		// if s.numberInterval >= 2*SBD_M { // >= N			
+
+// 		// 	var flowGroups FlowGroups
+
+			
+// 		// 	// fmt.Println("==============================================================================================", s.numberInterval)
+// 		// 	// fmt.Println(sbdEpoch, time.Now())
+// 		// 	groupsSBD = flowGroups.FlowGroups(s)
+			
+// 		// 	sbdObservationsCount++			
+
+// 		// 	// fmt.Println("gruops: ", groupsSBD)
+// 		// 	// flowGroups.PrintFile()
+
+// 		// 	//create all path in mpgroup
+// 		// 	// s.pathsLock.RLock()
+// 		// 	for pathID, _ := range s.paths {
+// 		// 		if pathID == 0 {
+// 		// 			continue
+// 		// 		}
+// 		// 		mgroup[pathID] = 0
+// 		// 	}
+// 		// 	// s.pathsLock.RUnlock()
+
+// 		// 	//classify each path
+// 		// 	for i, groups := range groupsSBD {
+// 		// 		for _, flow := range groups {
+// 		// 			for _, path := range flow.pathID {
+// 		// 				// fmt.Printf("fi: %d %d\n", path, uint8(i+1))
+// 		// 				mgroup[path] 		= uint8(i+1)
+// 		// 			}
+// 		// 		}
+// 		// 	}
+
+// 		// 	computeAccuracy2(mgroup)
+
+// 		// 	mgroupsObservation[sbdId] = mgroup
+// 		// 	sbdId += 1
+
+// 		// 	// flowGroups.PrintGroupsFile(mgroup)
+
+// 		// 	if sbdObservationsCount == SBD_MAX_OBSERVATIONS {
+// 		// 		sbdEpoch++
+// 		// 		sbdObservationsCount = 0
+// 		// 		sbdId = 0
+// 		// 		// s.mergeObservations()
+// 		// 	}
+			
+// 		// }
+
+// 	}
+
+// 	//SBD - compute statistics base	
+// 	p.pstats.ComputeStatisticsBase(owd, s.numberInterval)
+// 	// we just want to iterate once, but sometimes can iterate twice or more
+// 	for _, losses := range lossCount {
+// 		tmpPth := s.paths[losses.pathID]
+// 		tmpPth.pstats.ComputePacketLoss(uint64(losses.lossCount))
+// 	}
+	
+// 	// p.pstats.PrintFileOWD(p.pathID, tempo, timeDelay, owd, mgroupsObservation[sbdId])
+
+// }
 
 // handlePacket is called by the server with a new packet
 func (s *session) handlePacket(p *receivedPacket) {

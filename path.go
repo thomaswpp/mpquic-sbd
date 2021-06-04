@@ -40,11 +40,10 @@ type path struct {
 	pstats *sbd.PathStats
 	group uint8 
 	epoch uint16
-	rawOldOwd			float64
-	lossCount       uint8	
-	lastTimeStreamFrame uint64
-	lastSentLossCount uint64
-	state bool
+	// rawOldOwd			float64
+	// lossCount       uint8	
+	// lastTimeStreamFrame uint64
+	lastSentLossCount uint64	
 	
 	// It is now the responsibility of the path to keep its packet number
 	packetNumberGenerator *packetNumberGenerator
@@ -78,9 +77,6 @@ func (p *path) setup(oliaSenders map[protocol.PathID]*congestion.OliaSender) {
 	sentPacketHandler := ackhandler.NewSentPacketHandler(p.rttStats, cong, p.onRTO)
 
 	now := time.Now()
-
-	//SBD
-	p.state = false
 
 	p.sentPacketHandler = sentPacketHandler
 	p.receivedPacketHandler = ackhandler.NewReceivedPacketHandler(p.sess.version)
