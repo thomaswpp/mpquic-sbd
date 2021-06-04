@@ -1,4 +1,4 @@
-# A QUIC implementation in pure Go
+# An implementation of the RFC8382 Standard for Detecting Bottleneck Sharing in the MPQUIC Protocol 
 
 **Please read https://multipath-quic.org/2017/12/09/artifacts-available.html to figure out how to setup the code.**
 
