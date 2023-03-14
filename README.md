@@ -25,8 +25,8 @@ The original repositories have not been integrated as recursive git modules but 
 Review changes by navigating into the corresponding subfolder and using **git diff**.
 
 Original implementations:
-* [src/dash/caddy](https://github.com/deradev/mpquicScheduler/tree/master/src/dash/caddy) is used to build a Caddyserver executable with local MP-QUIC. 
-* [src/dash/client/proxy_module](https://github.com/deradev/mpquicScheduler/tree/master/src/dash/client/proxy_module) is a Python module that allows to issue http requests via local MP-QUIC.
+* [src/dash/caddy](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/dash/caddy) is used to build a Caddyserver executable with local MP-QUIC. 
+* [src/dash/client/proxy_module](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/client/proxy_module) is a Python module that allows to issue http requests via local MP-QUIC.
 Creating a Linux shared object (.so) allows bridging Go code into a Python module.
 
 Example video setup:
