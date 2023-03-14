@@ -18,6 +18,7 @@ Open source adaptations:
 * [src/quic-go](https://github.com/deradev/mpquicScheduler/tree/master/src/quic-go) contains extended MP-QUIC implementation written in Golang.
 * [src/caddy](https://github.com/deradev/mpquicScheduler/tree/master/src/caddy) contains Caddyserver with integrated MP-QUIC also written in Golang.
 * [src/AStream](https://github.com/deradev/mpquicScheduler/tree/master/src/AStream) contains DASH client with interchangeable Transport protocol written in Python 2.7.
+* [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example) contains example files and code for creating segments and representing mpd video.
 
 Review adaptations:
 The original repositories have not been integrated as recursive git modules but were copied instead.
@@ -29,7 +30,7 @@ Original implementations:
 Creating a Linux shared object (.so) allows bridging Go code into a Python module.
 
 Example video setup:
-* [example/video/big-buck-bunny](https://github.com/deradev/mpquicScheduler/tree/master/example/video/big-buck-bunny) contains a DASH-streamable video and a corresponding sample Caddyserver configuration file. The edited video resource is 'Big Buck Bunny' (c) copyright 2008, Blender Foundation / www.bigbuckbunny.org.
+* [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example) contains a DASH-streamable video and a corresponding sample Caddyserver configuration file. 
 
 ## Quickstart
 ```
