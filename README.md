@@ -126,9 +126,9 @@ In this project we run the experiment with three scenarios built in mininet, whi
 # Run mininet experiment.
 sudo python network/mininet/build_mininet_router<number_of_experiment>.py -nm 2 -p 'basic'
 ```
- - number_of_experiment: são três experimento para três cenários diferentes (1, 2 ou 3) 
- - -nm: é o número de interface do cliente, padrão 2;
- - -p: é o algoritmo DASH a ser executado, podendo ter três valores (basic, netflix ou sara);
+ - number_of_experiment: there are three experiments for three different scenarios (1, 2 or 3)
+ - -nm: is the client interface number, default 2;
+ - -p: is the DASH algorithm to be executed, which can have three values (basic, netflix or sara);
 
 If you want to change running the experiment with bulk transfer, you will have to uncomment line 196 in the code file of the scenarios (1, 2 or 3);
 
