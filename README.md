@@ -15,9 +15,9 @@ All source code is targeted to run on Ubuntu 64-bit machines.
 ## Structure of this repository
 
 Open source adaptations:
-* [src/quic-go](https://github.com/deradev/mpquicScheduler/tree/master/src/quic-go) contains extended MP-QUIC implementation written in Golang.
-* [src/caddy](https://github.com/deradev/mpquicScheduler/tree/master/src/caddy) contains Caddyserver with integrated MP-QUIC also written in Golang.
-* [src/AStream](https://github.com/deradev/mpquicScheduler/tree/master/src/AStream) contains DASH client with interchangeable Transport protocol written in Python 2.7.
+* [src/quic-go](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/quic-go) contains extended MP-QUIC implementation written in Golang.
+* [src/caddy](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/caddy) contains Caddyserver with integrated MP-QUIC also written in Golang.
+* [src/AStream](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/AStream) contains DASH client with interchangeable Transport protocol written in Python 2.7.
 * [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example) contains example files and code for creating segments and representing mpd video.
 
 Review adaptations:
