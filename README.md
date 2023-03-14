@@ -1,74 +1,140 @@
-# An implementation of the RFC8382 Standard for Detecting Bottleneck Sharing in the MPQUIC Protocol 
+# An implementation of the RFC8382 Standard for Detecting Bottleneck Sharing in the MPQUIC Protocol
 
-**Please read https://multipath-quic.org/2017/12/09/artifacts-available.html to figure out how to setup the code.**
+This repository contains the sources of research work regarding Multipath-QUIC SBD.
+[Multipath-QUIC from Q. Deconinck et al.](https://github.com/qdeconinck/mp-quic) is a Golang implementation of Multipath-QUIC.
+It was initially forked from quic-go (https://github.com/lucas-clemente/quic-go).
+Additional scheduler implementations are added in this work.
 
-<img src="docs/quic.png" width=303 height=124>
+These schedulers are evaluated in a DASH video streaming scenario:
+[Caddyserver](https://caddyserver.com/) is a open source Http server written in Golang making it easy to integrate MP-QUIC.
+[AStream](https://github.com/pari685/AStream) serves as open-source DASH client.
+AStream was also extended by using MP-QUIC as transport layer protocol.
 
-[![Godoc Reference](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/lucas-clemente/quic-go)
-[![Linux Build Status](https://img.shields.io/travis/lucas-clemente/quic-go/master.svg?style=flat-square&label=linux+build)](https://travis-ci.org/lucas-clemente/quic-go)
-[![Windows Build Status](https://img.shields.io/appveyor/ci/lucas-clemente/quic-go/master.svg?style=flat-square&label=windows+build)](https://ci.appveyor.com/project/lucas-clemente/quic-go/branch/master)
-[![Code Coverage](https://img.shields.io/codecov/c/github/lucas-clemente/quic-go/master.svg?style=flat-square)](https://codecov.io/gh/lucas-clemente/quic-go/)
+All source code is targeted to run on Ubuntu 64-bit machines.
 
-quic-go is an implementation of the [QUIC](https://en.wikipedia.org/wiki/QUIC) protocol in Go.
+## Structure of this repository
 
-## Roadmap
+Open source adaptations:
+* [src/quic-go](https://github.com/deradev/mpquicScheduler/tree/master/src/quic-go) contains extended MP-QUIC implementation written in Golang.
+* [src/caddy](https://github.com/deradev/mpquicScheduler/tree/master/src/caddy) contains Caddyserver with integrated MP-QUIC also written in Golang.
+* [src/AStream](https://github.com/deradev/mpquicScheduler/tree/master/src/AStream) contains DASH client with interchangeable Transport protocol written in Python 2.7.
 
-quic-go is compatible with the current version(s) of Google Chrome and QUIC as deployed on Google's servers. We're actively tracking the development of the Chrome code to ensure compatibility as the protocol evolves. In that process, we're dropping support for old QUIC versions.
-As Google's QUIC versions are expected to converge towards the [IETF QUIC draft](https://github.com/quicwg/base-drafts), quic-go will eventually implement that draft.
+Review adaptations:
+The original repositories have not been integrated as recursive git modules but were copied instead.
+Review changes by navigating into the corresponding subfolder and using **git diff**.
 
-## Guides
+Original implementations:
+* [src/dash/caddy](https://github.com/deradev/mpquicScheduler/tree/master/src/dash/caddy) is used to build a Caddyserver executable with local MP-QUIC. 
+* [src/dash/client/proxy_module](https://github.com/deradev/mpquicScheduler/tree/master/src/dash/client/proxy_module) is a Python module that allows to issue http requests via local MP-QUIC.
+Creating a Linux shared object (.so) allows bridging Go code into a Python module.
 
-We currently support Go 1.9+.
+Example video setup:
+* [example/video/big-buck-bunny](https://github.com/deradev/mpquicScheduler/tree/master/example/video/big-buck-bunny) contains a DASH-streamable video and a corresponding sample Caddyserver configuration file. The edited video resource is 'Big Buck Bunny' (c) copyright 2008, Blender Foundation / www.bigbuckbunny.org.
 
-Installing and updating dependencies:
+## Quickstart
+```
+# Clone repository and build sources
+git clone https://github.com/deradev/mpquic-sbd
+cd mpquic-sbd
+./build.sh
 
-    go get -t -u ./...
-
-Running tests:
-
-    go test ./...
-
-### Running the example server
-
-    go run example/main.go -www /var/www/
-
-Using the `quic_client` from chromium:
-
-    quic_client --host=127.0.0.1 --port=6121 --v=1 https://quic.clemente.io
-
-Using Chrome:
-
-    /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --user-data-dir=/tmp/chrome --no-proxy-server --enable-quic --origin-to-force-quic-on=quic.clemente.io:443 --host-resolver-rules='MAP quic.clemente.io:443 127.0.0.1:6121' https://quic.clemente.io
-
-### QUIC without HTTP/2
-
-Take a look at [this echo example](example/echo/echo.go).
-
-### Using the example client
-
-    go run example/client/main.go https://clemente.io
-
-## Usage
-
-### As a server
-
-See the [example server](example/main.go) or try out [Caddy](https://github.com/mholt/caddy) (from version 0.9, [instructions here](https://github.com/mholt/caddy/wiki/QUIC)). Starting a QUIC server is very similar to the standard lib http in go:
-
-```go
-http.Handle("/", http.FileServer(http.Dir(wwwDir)))
-h2quic.ListenAndServeQUIC("localhost:4242", "/path/to/cert/chain.pem", "/path/to/privkey.pem", nil)
+# Run Caddyserver with sample Caddyfile and Multipath-QUIC
+./src/dash/caddy/caddy -conf example/Caddyfile -quic -mp
+# Run AStream client with sample video target and Multipath-QUIC
+python src/AStream/dist/client/dash_client.py -m "https://localhost:4242/output_dash.mpd" -p 'basic' -q -mp
 ```
 
-### As a client
+## Build
 
-See the [example client](example/client/main.go). Use a `h2quic.RoundTripper` as a `Transport` in a `http.Client`.
+The Go code modules are build with Golang version 1.12.
+Here used modules are build *outside* of GOPATH.
+Herefore the local setup redirects their modular dependencies to the local implementations.
 
-```go
-http.Client{
-  Transport: &h2quic.RoundTripper{},
+Build MP-QUIC:
+```
+cd src/quic-go
+go build ./...
+```
+Notes: Go modules allow recursive build, this module must not necessarily be build explicitely.
+The MP-QUIC module can be used by other Go modules via reference in their go.mod.
+
+Build Caddyserver executable:
+```
+cd src/dash/caddy
+go build
+```
+
+Build MP-QUIC shared object module:
+```
+cd src/dash/client/proxy_module
+go build -o proxy_module.so -buildmode=c-shared proxy_module.go
+```
+
+## Use
+
+### Prepare AStream DASH client
+After building the proxy module, copy AStream dependencies.
+(Probably also requires path change in line 5 of src/dash/client/proxy_module/conn.py)
+```
+cp src/dash/client/proxy_module/proxy_module.h src/AStream/dist/client/
+cp src/dash/client/proxy_module/proxy_module.so src/AStream/dist/client/
+cp src/dash/client/proxy_module/conn.py src/AStream/dist/client/
+```
+
+#### Prepare Caddyserver
+For DASH video streaming Caddyserver needs setup to serve video chunks.
+A file named [*Caddyfile*](https://caddyserver.com/tutorial/caddyfile) must be configured to this end.
+Example Caddyfile:
+```
+https://localhost:4242 {
+    root <URL to DASH video files>
+    tls self_signed
 }
 ```
 
-## Contributing
+#### Run Caddyserver
+Run the created executable from src/dash/caddy:
+```
+# Run Caddyserver on single path.
+./caddy -quic
+# Or run caddy with multipath.
+./caddy -quic -mp
+```
 
-We are always happy to welcome new contributors! We have a number of self-contained issues that are suitable for first-time contributors, they are tagged with [want-help](https://github.com/lucas-clemente/quic-go/issues?q=is%3Aopen+is%3Aissue+label%3Awant-help). If you have any questions, please feel free to reach out by opening an issue or leaving a comment.
+#### Run AStream DASH client
+Run the AStream client from src/AStream:
+```
+# Run AStream on single path.
+python AStream/dist/client/dash_client.py -m <SERVER URL TO MPD> -p 'basic' -q
+# Or run caddy with multipath and SBD.
+python AStream/dist/client/dash_client.py -m <SERVER URL TO MPD> -p 'basic' -q -mp
+```
+#### Run Bulk Transfer client
+```
+# Run on single path.
+python AStream/dist/client/bulk_transfer.py -m <SERVER URL TO MPD> -q
+
+# Or run caddy with multipath
+python AStream/dist/client/bulk_transfer.py -m <SERVER URL TO MPD> -q -mp
+```
+
+#### Run this project with mininet
+In this project we run the experiment with three scenarios built in mininet, which can be seen in the directory network/mininet/.
+
+```
+# Run mininet experiment.
+sudo python network/mininet/build_mininet_router<number_of_experiment>.py -nm 2 -p 'basic'
+```
+ - number_of_experiment: são três experimento para três cenários diferentes (1, 2 ou 3) 
+ - -nm: é o número de interface do cliente, padrão 2;
+ - -p: é o algoritmo DASH a ser executado, podendo ter três valores (basic, netflix ou sara);
+
+If you want to change running the experiment with bulk transfer, you will have to uncomment line 196 in the code file of the scenarios (1, 2 or 3);
+
+
+## References
+
+This repository contains modified source code versions:
+* [MP-QUIC](https://github.com/qdeconinck/mp-quic)
+* [Caddyserver](https://github.com/caddyserver/caddy)
+* [AStream](https://github.com/pari685/AStream)
