@@ -1,0 +1,1934 @@
+diff --git a/include/linux/tcp.h b/include/linux/tcp.h
+index 288b247..f8c330b 100644
+--- a/include/linux/tcp.h
++++ b/include/linux/tcp.h
+@@ -177,6 +177,9 @@ static inline struct tcp_request_sock *tcp_rsk(const struct request_sock *req)
+ 
+ struct tcp_md5sig_key;
+ 
++// forward declaration
++struct mptcp_pm_ops;
++
+ struct tcp_sock {
+ 	/* inet_connection_sock has to be the first member of tcp_sock */
+ 	struct inet_connection_sock	inet_conn;
+@@ -397,6 +400,10 @@ struct tcp_sock {
+ 	u32		mptcp_loc_token;
+ 	u64		mptcp_loc_key;
+ #endif /* CONFIG_MPTCP */
++	int		ndiffports;
++	int		debug_on;
++	struct mptcp_pm_ops *mptcp_pm;
++	int 	loss_count;
+ 
+ 	/* Functions that depend on the value of the mpc flag */
+ 	u32 (*__select_window)(struct sock *sk);
+diff --git a/include/net/mptcp.h b/include/net/mptcp.h
+index 6662858..2da6aef 100644
+--- a/include/net/mptcp.h
++++ b/include/net/mptcp.h
+@@ -111,7 +111,7 @@ struct mptcp_request_sock {
+ };
+ 
+ struct mptcp_options_received {
+-	u16	saw_mpc:1,
++	u32	saw_mpc:1,
+ 		dss_csum:1,
+ 		drop_me:1,
+ 
+@@ -132,7 +132,9 @@ struct mptcp_options_received {
+ 		more_rem_addr:1, /* Saw one more rem-addr. */
+ 
+ 		mp_fail:1,
+-		mp_fclose:1;
++		mp_fclose:1,
++		mp_group:1,
++		mp_timestamp:1;
+ 	u8	rem_id;		/* Address-id in the MP_JOIN */
+ 	u8	prio_addr_id;	/* Address-id in the MP_PRIO */
+ 
+@@ -151,6 +153,36 @@ struct mptcp_options_received {
+ 	u32	mptcp_recv_nonce;
+ 	u64	mptcp_recv_tmac;
+ 	u8	mptcp_recv_mac[20];
++
++	u8 	mptcp_group_epoch; // TODO: should be u16
++	u8  	mptcp_group;
++	u16  	mptcp_group_port;
++
++	s64	mptcp_rcv_ns;  // when received locally, nsecs
++ 	s64	mptcp_rcvd_us; // what we received from remote end, usecs
++	int	mptcp_loss; // true if server experiences 1 loss
++};
++
++struct mptcp_owd_snapshot {
++  s64 cache_local_mean;
++  u64 next_sample_allowed;
++
++  s64 sum_usecs;  // sum of all received owd samples
++  s64 max_usecs;  // maximum of all received owd samples
++  int count;      // number of received owd samples
++  int skew_lcount, skew_rcount; // number of owd samples < and > long term mean
++  int index;      // snapshot index, starts at 0, increments every SBD_T msecs
++  int loss_count; // number of experienced loss events
++};
++
++#define SBD_T 350 // in msecs
++#define SBD_N 50
++
++#define MPTCP_GROUP_HISTORY_SIZE 8
++
++struct mptcp_group_item {
++	u16 epoch; // value 0 marks item as invalid (there's no epoch 0)
++	u8  group;
+ };
+ 
+ struct mptcp_tcp_sock {
+@@ -204,6 +236,13 @@ struct mptcp_tcp_sock {
+ 
+ 	/* HMAC of the third ack */
+ 	char sender_mac[20];
++
++	struct mptcp_group_item group_history[MPTCP_GROUP_HISTORY_SIZE]; // ringbuffer
++	int                     group_history_next;
++  // mpcb has a lock which must be held during updates
++
++	struct mptcp_owd_snapshot owd_snapshots[SBD_N];
++	int                       owd_snapshot_next;
+ };
+ 
+ struct mptcp_tw {
+@@ -338,6 +377,14 @@ struct mptcp_cb {
+ 
+ 	/* Timer for retransmitting SYN/ACK+MP_JOIN */
+ 	struct timer_list synack_timer;
++
++	s64 start_ns; // creation time of the socket in system time, unit: nanoseconds
++
++	spinlock_t group_history_lock; // must be held when updating any subflow's received group info
++
++	char groups[32]; // one group value per subflow
++	int  groups_epoch;
++	int  next_groups_pi; // for which subflow to transmit info next
+ };
+ 
+ #define MPTCP_SUB_CAPABLE			0
+@@ -410,6 +457,14 @@ struct mptcp_cb {
+ #define MPTCP_SUB_LEN_FCLOSE	12
+ #define MPTCP_SUB_LEN_FCLOSE_ALIGN	12
+ 
++#define MPTCP_SUB_TIMESTAMP	8
++#define MPTCP_SUB_LEN_TIMESTAMP	8
++#define MPTCP_SUB_LEN_TIMESTAMP_ALIGN	8
++
++#define MPTCP_SUB_GROUP	9
++#define MPTCP_SUB_LEN_GROUP	8
++#define MPTCP_SUB_LEN_GROUP_ALIGN	8
++
+ 
+ #define OPTION_MPTCP		(1 << 5)
+ 
+@@ -455,6 +510,8 @@ extern bool mptcp_init_failed;
+ #define OPTION_MP_FCLOSE	(1 << 8)
+ #define OPTION_REMOVE_ADDR	(1 << 9)
+ #define OPTION_MP_PRIO		(1 << 10)
++#define OPTION_MP_TIMESTAMP	(1 << 11)
++#define OPTION_MP_GROUP	    (1 << 12)
+ 
+ /* MPTCP flags: both TX and RX */
+ #define MPTCPHDR_SEQ		0x01 /* DSS.M option is present */
+@@ -655,6 +712,42 @@ struct mp_prio {
+ 	__u8	addr_id;
+ } __attribute__((__packed__));
+ 
++struct mp_timestamp {
++	__u8	kind;
++	__u8	len;
++#if defined(__LITTLE_ENDIAN_BITFIELD)
++	__u16	rsv1:4,
++		sub:4,
++		rsv2:8;
++#elif defined(__BIG_ENDIAN_BITFIELD)
++	__u16	sub:4,
++		rsv1:4,
++		rsv2:8;
++#else
++#error  "Adjust your <asm/byteorder.h> defines"
++#endif
++	__u32	time_usecs;
++} __attribute__((__packed__));
++
++struct mp_group {
++	__u8	kind;
++	__u8	len;
++#if defined(__LITTLE_ENDIAN_BITFIELD)
++	__u16	rsv1:4,
++		sub:4,
++		rsv2:8;
++#elif defined(__BIG_ENDIAN_BITFIELD)
++	__u16	sub:4,
++		rsv1:4,
++		rsv2:8;
++#else
++#error  "Adjust your <asm/byteorder.h> defines"
++#endif
++	__u8   epoch; // TODO should be u16
++	__u8   group;
++	__u16  port;
++} __attribute__((__packed__));
++
+ static inline int mptcp_sub_len_dss(struct mp_dss *m, int csum)
+ {
+ 	return 4 + m->A * (4 + m->a * 4) + m->M * (10 + m->m * 4 + csum * 2);
+@@ -669,6 +762,16 @@ extern int sysctl_mptcp_syn_retries;
+ 
+ extern struct workqueue_struct *mptcp_wq;
+ 
++/* sfo */
++#define mptcp_debug2(mpcb, fmt, args...)				\
++	do {								\
++		struct sock *meta_sk = mpcb ? mpcb->meta_sk : NULL;	\
++		struct tcp_sock *meta_tp = tcp_sk(meta_sk);		\
++		u8 debug_on = meta_tp ? meta_tp->debug_on : 0;		\
++		if (unlikely(sysctl_mptcp_debug || debug_on)) 		\
++			pr_err(__FILE__ ": " fmt, ##args);	\
++	} while (0)
++
+ #define mptcp_debug(fmt, args...)					\
+ 	do {								\
+ 		if (unlikely(sysctl_mptcp_debug))			\
+@@ -846,7 +949,7 @@ void mptcp_disable_static_key(void);
+ /* MPTCP-path-manager registration/initialization functions */
+ int mptcp_register_path_manager(struct mptcp_pm_ops *pm);
+ void mptcp_unregister_path_manager(struct mptcp_pm_ops *pm);
+-void mptcp_init_path_manager(struct mptcp_cb *mpcb);
++void mptcp_init_path_manager(struct mptcp_cb *mpcb, struct tcp_sock *meta_tp);
+ void mptcp_cleanup_path_manager(struct mptcp_cb *mpcb);
+ void mptcp_fallback_default(struct mptcp_cb *mpcb);
+ void mptcp_get_default_path_manager(char *name);
+@@ -1076,6 +1179,8 @@ static inline void mptcp_init_mp_opt(struct mptcp_options_received *mopt)
+ 
+ 	mopt->mp_fail = 0;
+ 	mopt->mp_fclose = 0;
++	mopt->mp_group = 0;
++	mopt->mp_timestamp = 0;
+ }
+ 
+ static inline void mptcp_reset_mopt(struct tcp_sock *tp)
+@@ -1090,6 +1195,8 @@ static inline void mptcp_reset_mopt(struct tcp_sock *tp)
+ 	mopt->join_ack = 0;
+ 	mopt->mp_fail = 0;
+ 	mopt->mp_fclose = 0;
++	mopt->mp_group = 0;
++	mopt->mp_timestamp = 0;
+ }
+ 
+ static inline __be32 mptcp_get_highorder_sndbits(const struct sk_buff *skb,
+diff --git a/include/uapi/linux/tcp.h b/include/uapi/linux/tcp.h
+index 2ffcb03..3dca72b 100644
+--- a/include/uapi/linux/tcp.h
++++ b/include/uapi/linux/tcp.h
+@@ -114,6 +114,19 @@ enum {
+ #define TCP_NOTSENT_LOWAT	25	/* limit number of unsent bytes in write queue */
+ #define MPTCP_ENABLED		26
+ 
++#define TCP_MPTCPSUBFLOWCOUNT   29      /* Gets the current number of subflows, 0 if not a MPTCP socket */
++#define TCP_MPTCPSUBFLOWOWD     30      /* Retrieves OWD samples for a subflow */
++#define TCP_MPTCPSUBFLOWGROUPS  31	    /* Sets the groups for the subflows */
++
++#define TCP_MULTIPATH_DEBUG			10001		/* MPTCP DEBUG on/off */
++#define TCP_MULTIPATH_ENABLE			MPTCP_ENABLED	/* MPTCP DISABLED on/off */
++#define TCP_MULTIPATH_ADD				10003	/* not yet implemented */
++#define TCP_MULTIPATH_REMOVE			10004	/* not yet implemented */
++#define TCP_MULTIPATH_SUBFLOWS		10005	/* not yet implemented */
++#define TCP_MULTIPATH_CONNID			10006	/* not yet implemented */
++#define TCP_MULTIPATH_NDIFFPORTS		10007	/* MPTCP NDIFFPORTS */
++#define TCP_MULTIPATH_PATHMANAGER	10008	/* MPTCP PATHMANAGER */
++
+ struct tcp_repair_opt {
+ 	__u32	opt_code;
+ 	__u32	opt_val;
+@@ -189,6 +202,22 @@ struct tcp_info {
+ 	__u32	tcpi_total_retrans;
+ };
+ 
++struct tcp_mptcpsubflowowd {
++  __s32 req_pathindex;         // request: which flow (path index)
++  __s32 req_index;             // request: which snapshot (index, -1 for latest)
++
++  __s32 index;      // which snapshot is this?
++  __s64 sum_usecs;  // sum of all received owd samples
++  __s64 max_usecs;  // maximum of all received owd samples
++  __s32 count;      // number of received owd samples
++  __s32 skew_lcount, skew_rcount; // number of owd samples < and > long term mean
++  __s32 loss_count; // number of experienced loss events
++};
++
++struct tcp_mptcpsubflowgroups {
++  char groups[32]; // one group value per subflow
++};
++
+ /* for TCP_MD5SIG socket option */
+ #define TCP_MD5SIG_MAXKEYLEN	80
+ 
+diff --git a/net/ipv4/tcp.c b/net/ipv4/tcp.c
+index 43f9239..73a50d0 100644
+--- a/net/ipv4/tcp.c
++++ b/net/ipv4/tcp.c
+@@ -2495,6 +2495,21 @@ static int tcp_repair_options_est(struct tcp_sock *tp,
+ 	return 0;
+ }
+ 
++struct mptcp_pm_ops *mptcp_pm_find(const char *name);
++
++static int mptcp_set_subflowgroups(struct sock *sk, struct tcp_mptcpsubflowgroups *data) {
++  struct tcp_sock *tp = tcp_sk(sk);
++
++  if (!tp->mpcb) {
++    return -EFAULT;
++  }
++
++  memcpy(&tp->mpcb->groups[0], &data->groups[0], sizeof(char) * 32);
++  tp->mpcb->groups_epoch++;
++
++  return 0;
++}
++
+ /*
+  *	Socket option code for TCP.
+  */
+@@ -2525,6 +2540,46 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
+ 		release_sock(sk);
+ 		return err;
+ 	}
++	case TCP_MPTCPSUBFLOWGROUPS: {
++		struct tcp_mptcpsubflowgroups data;
++
++		if (optlen != sizeof(data)) {
++			return -EINVAL;
++		}
++
++		if (copy_from_user(&data, optval, sizeof(data))) {
++			return -EFAULT;
++		}
++
++		lock_sock(sk);
++		err = mptcp_set_subflowgroups(sk, &data);
++		release_sock(sk);
++		return err;
++	}
++	case TCP_MULTIPATH_PATHMANAGER: {
++		char name[MPTCP_PM_NAME_MAX];
++
++		if (optlen < 1)
++			return -EINVAL;
++
++		val = strncpy_from_user(name, optval,
++					min_t(long, MPTCP_PM_NAME_MAX-1, optlen));
++		if (val < 0)
++			return -EFAULT;
++		name[val] = 0;
++
++		lock_sock(sk);
++		tp->mptcp_pm = mptcp_pm_find(name);
++		release_sock(sk);
++
++		if (!tp->mptcp_pm)
++			return -EFAULT;
++		return 0;
++	}
++	case TCP_MULTIPATH_ADD:
++	case TCP_MULTIPATH_REMOVE:
++		/* Implement Me! */
++		return -EOPNOTSUPP;
+ 	default:
+ 		/* fallthru */
+ 		break;
+@@ -2774,6 +2829,7 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
+ 		break;
+ #ifdef CONFIG_MPTCP
+ 	case MPTCP_ENABLED:
++	case 10002:   /* !!! FIXME: compatibility to old patch !!! */
+ 		if (mptcp_init_failed || !sysctl_mptcp_enabled ||
+ 		    sk->sk_state != TCP_CLOSE) {
+ 			err = -EPERM;
+@@ -2785,6 +2841,18 @@ static int do_tcp_setsockopt(struct sock *sk, int level,
+ 		else
+ 			mptcp_disable_sock(sk);
+ 		break;
++	case TCP_MULTIPATH_DEBUG:
++		if (val)
++			tp->debug_on = 1;
++		else
++			tp->debug_on = 0;
++		break;
++	case TCP_MULTIPATH_NDIFFPORTS:
++		if (val < 0)
++			err = -EINVAL;
++		else
++			tp->ndiffports = val;
++		break;		
+ #endif
+ 	default:
+ 		err = -ENOPROTOOPT;
+@@ -2887,6 +2955,117 @@ void tcp_get_info(const struct sock *sk, struct tcp_info *info)
+ }
+ EXPORT_SYMBOL_GPL(tcp_get_info);
+ 
++const struct tcp_sock *mptcp_get_subflow(const struct sock *meta_sk, u8 pi)
++{
++	struct sock *sk_it;
++
++	if (!tcp_sk(meta_sk)->mpcb)
++		return 0;
++
++	mptcp_for_each_sk(tcp_sk(meta_sk)->mpcb, sk_it) {
++		const struct tcp_sock *tp = tcp_sk(sk_it);
++		if (tp->mptcp && tp->mptcp->path_index == pi) {
++			return tp;
++		}
++	}
++	return 0;
++}
++
++int tcp_get_mptcpsubflowowd(const struct sock *sk, struct tcp_mptcpsubflowowd *owd)
++{
++	const struct tcp_sock *flow_tp = NULL;
++	struct mptcp_owd_snapshot *snap = NULL;
++
++	struct timespec now;
++	s64 now_nsecs, now_rel_start_nsecs;
++	int i, cur_index;
++
++	// select flow based on request
++	if (owd->req_pathindex == 0) {
++		flow_tp = tcp_sk(sk);
++	}
++	else if (is_meta_sk(sk)) {
++		flow_tp = mptcp_get_subflow(sk, owd->req_pathindex);
++	}
++
++	if (!flow_tp || !flow_tp->mptcp) {
++		memset(owd, 0, sizeof(struct tcp_mptcpsubflowowd));
++		return 0;
++	}
++
++	// fill snapshots we didn't record due to lack of incoming packets
++	getnstimeofday(&now);
++	now_nsecs = timespec_to_ns(&now); // local time, in nsecs
++	now_rel_start_nsecs = now_nsecs - flow_tp->mpcb->start_ns;
++	cur_index = (int)div_s64(now_rel_start_nsecs, SBD_T * 1000000);
++
++	if (flow_tp->mptcp->owd_snapshot_next + SBD_N < cur_index) {
++		flow_tp->mptcp->owd_snapshot_next = cur_index - SBD_N - 1;
++	}
++
++	while (flow_tp->mptcp->owd_snapshot_next < cur_index) {
++		int snap_idx;
++
++		flow_tp->mptcp->owd_snapshot_next++;
++
++		snap_idx = flow_tp->mptcp->owd_snapshot_next % SBD_N;
++		if (snap_idx < 0) {
++			printk(KERN_ERR "snap_idx overflow!\n");
++			break;
++		}
++
++		memset(&flow_tp->mptcp->owd_snapshots[snap_idx], 0, sizeof(struct mptcp_owd_snapshot));
++		flow_tp->mptcp->owd_snapshots[snap_idx].index = flow_tp->mptcp->owd_snapshot_next;
++	}
++
++  // find the requested snapshot
++  if (owd->req_index == -1) {
++    struct mptcp_owd_snapshot *snap_it;
++    int snap_idx;
++
++    // get the latest finished snapshot
++    int last_finished_snap_idx = flow_tp->mptcp->owd_snapshot_next - 1;
++    if (last_finished_snap_idx < 0) {
++      printk(KERN_ERR "Snapshot 0 not ready yet!\n");
++      memset(owd, 0, sizeof(struct tcp_mptcpsubflowowd));
++      return 0;
++    }
++
++    snap_idx = last_finished_snap_idx % SBD_N;
++    snap_it = &flow_tp->mptcp->owd_snapshots[snap_idx];
++    if (snap_it->index == last_finished_snap_idx)
++      snap = snap_it;
++    else
++      printk(KERN_ERR "Couldn't find last snapshot %i at index %i\n", last_finished_snap_idx, snap_idx);
++  }
++  else {
++    for (i = 0; i < SBD_N; ++i) {
++      struct mptcp_owd_snapshot *snap_it = &flow_tp->mptcp->owd_snapshots[i];
++      if (snap_it->index == owd->req_index) {
++        snap = snap_it;
++        break;
++      }
++    }
++  }
++
++	if (!snap) {
++    printk(KERN_ERR "Snapshot %i not found!\n", owd->req_index);
++		memset(owd, 0, sizeof(struct tcp_mptcpsubflowowd));
++		return 0;
++	}
++
++	// copy to user
++  owd->sum_usecs = snap->sum_usecs;
++  owd->max_usecs = snap->max_usecs;
++  owd->count = snap->count;
++  owd->skew_lcount = snap->skew_lcount; 
++  owd->skew_rcount = snap->skew_rcount; 
++  owd->index = snap->index; 
++  owd->loss_count = snap->loss_count; 
++
++	return 1;
++}
++
+ static int do_tcp_getsockopt(struct sock *sk, int level,
+ 		int optname, char __user *optval, int __user *optlen)
+ {
+@@ -3005,11 +3184,58 @@ static int do_tcp_getsockopt(struct sock *sk, int level,
+ 	case TCP_NOTSENT_LOWAT:
+ 		val = tp->notsent_lowat;
+ 		break;
++        case TCP_MPTCPSUBFLOWCOUNT:
++                val = tp->mpcb ? tp->mpcb->cnt_subflows : 0;
++                break;
++        case TCP_MPTCPSUBFLOWOWD: {
++                struct tcp_mptcpsubflowowd owd;
++
++                if (get_user(len, optlen))
++                        return -EFAULT;
++
++                // if the size of the passed in struct is not the same as ours, return error
++                if (len != sizeof(owd)) {
++                        printk(KERN_ERR "TCP_MPTCPSUBFLOWOWD: wrong size %i, expected %i\n", len, (int)sizeof(owd));
++                        return -EFAULT;
++                }
++
++                // fetch the request fields
++                if (copy_from_user(&owd, optval, sizeof(owd)))
++                        return -EFAULT;
++
++                if (!tcp_get_mptcpsubflowowd(sk, &owd))
++                        return -EFAULT;
++
++                if (copy_to_user(optval, &owd, len))
++                        return -EFAULT;
++                return 0;
++        }
+ #ifdef CONFIG_MPTCP
+ 	case MPTCP_ENABLED:
+ 		val = sock_flag(sk, SOCK_MPTCP) ? 1 : 0;
+ 		break;
+ #endif
++	case TCP_MULTIPATH_DEBUG:
++		val = tp->debug_on;
++		break;
++	case TCP_MULTIPATH_NDIFFPORTS:
++		val = tp->ndiffports;
++		break;
++	case TCP_MULTIPATH_SUBFLOWS:
++	case TCP_MULTIPATH_CONNID:
++		/* Implement Me! */
++		return -EOPNOTSUPP;
++
++	case TCP_MULTIPATH_PATHMANAGER:
++		if (get_user(len, optlen))
++			return -EFAULT;
++		len = min_t(unsigned int, len, MPTCP_PM_NAME_MAX);
++		if (put_user(len, optlen))
++			return -EFAULT;
++		if (copy_to_user(optval, tp->mptcp_pm->name, len))
++			return -EFAULT;
++		return 0;
++
+ 	default:
+ 		return -ENOPROTOOPT;
+ 	}
+diff --git a/net/ipv4/tcp_output.c b/net/ipv4/tcp_output.c
+index e039202..69c43a1 100644
+--- a/net/ipv4/tcp_output.c
++++ b/net/ipv4/tcp_output.c
+@@ -2554,6 +2554,12 @@ static bool tcp_can_forward_retransmit(struct sock *sk)
+ 	return true;
+ }
+ 
++static void mptcp_log_potential_loss(struct sock *sk)
++{
++    struct tcp_sock *tp = tcp_sk(sk);
++    tp->loss_count++;
++}
++
+ /* This gets called after a retransmit timeout, and the initially
+  * retransmitted data is acknowledged.  It tries to continue
+  * resending the rest of the retransmit queue, until either
+@@ -2645,6 +2651,7 @@ begin_fwd:
+ 			return;
+ 
+ 		NET_INC_STATS_BH(sock_net(sk), mib_idx);
++		mptcp_log_potential_loss(sk);
+ 
+ 		if (tcp_in_cwnd_reduction(sk))
+ 			tp->prr_out += tcp_skb_pcount(skb);
+diff --git a/net/mptcp/Kconfig b/net/mptcp/Kconfig
+index cdfc03a..93c8b35 100644
+--- a/net/mptcp/Kconfig
++++ b/net/mptcp/Kconfig
+@@ -78,6 +78,12 @@ menuconfig MPTCP_SCHED_ADVANCED
+ 
+ if MPTCP_SCHED_ADVANCED
+ 
++config MPTCP_BALIA
++        tristate "MPTCP Balia"
++        depends on (MPTCP=y)
++        ---help---
++         Not a scheduler, but a congestion algo.
++
+ config MPTCP_ROUNDROBIN
+ 	tristate "MPTCP Round-Robin"
+ 	depends on (MPTCP=y)
+@@ -85,6 +91,12 @@ config MPTCP_ROUNDROBIN
+ 	  This is a very simple round-robin scheduler. Probably has bad performance
+ 	  but might be interesting for researchers.
+ 
++config MPTCP_OLIASBDX
++        tristate "MPTCP Olia SBD X"
++        depends on (MPTCP=y)
++        ---help---
++         Not a scheduler, but a congestion algo.
++
+ choice
+ 	prompt "Default MPTCP Scheduler"
+ 	default DEFAULT
+diff --git a/net/mptcp/Makefile b/net/mptcp/Makefile
+index 6b27bff..d58a38d 100644
+--- a/net/mptcp/Makefile
++++ b/net/mptcp/Makefile
+@@ -10,6 +10,8 @@ mptcp-y := mptcp_ctrl.o mptcp_ipv4.o mptcp_ofo_queue.o mptcp_pm.o \
+ 
+ obj-$(CONFIG_TCP_CONG_LIA) += mptcp_coupled.o
+ obj-$(CONFIG_TCP_CONG_OLIA) += mptcp_olia.o
++obj-$(CONFIG_MPTCP_BALIA) += mptcp_balia.o
++obj-$(CONFIG_MPTCP_OLIASBDX) += mptcp_oliasbdx.o
+ obj-$(CONFIG_TCP_CONG_WVEGAS) += mptcp_wvegas.o
+ obj-$(CONFIG_MPTCP_FULLMESH) += mptcp_fullmesh.o
+ obj-$(CONFIG_MPTCP_NDIFFPORTS) += mptcp_ndiffports.o
+diff --git a/net/mptcp/MakefileModules b/net/mptcp/MakefileModules
+new file mode 100644
+index 0000000..dce0cf5
+--- /dev/null
++++ b/net/mptcp/MakefileModules
+@@ -0,0 +1,4 @@
++all:
++	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
++clean:
++	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+diff --git a/net/mptcp/mptcp_balia.c b/net/mptcp/mptcp_balia.c
+new file mode 100644
+index 0000000..705cdf8
+--- /dev/null
++++ b/net/mptcp/mptcp_balia.c
+@@ -0,0 +1,267 @@
++/*
++ *	MPTCP implementation - Balia Congestion Control
++ *	(Balanced Linked Adaptation Algorithm)
++ *
++ *	Analysis, Design and Implementation:
++ *	Qiuyu Peng <qpeng@caltech.edu>
++ *	Anwar Walid <anwar@research.bell-labs.com>
++ *	Jaehyun Hwang <jh.hwang@alcatel-lucent.com>
++ *	Steven H. Low <slow@caltech.edu>
++ *
++ *	This program is free software; you can redistribute it and/or
++ *	modify it under the terms of the GNU General Public License
++ *	as published by the Free Software Foundation; either version
++ *	2 of the License, or (at your option) any later version.
++ */
++
++#include <net/tcp.h>
++#include <net/mptcp.h>
++
++#include <linux/module.h>
++
++/* The variable 'rate' (i.e., x_r) will be scaled down
++ * e.g., from B/s to KB/s, MB/s, or GB/s
++ * if max_rate > 2^rate_scale_limit
++ */
++
++static int rate_scale_limit = 25;
++static int alpha_scale = 10;
++static int scale_num = 5;
++
++struct mptcp_balia {
++	u64	ai;
++	u64	md;
++	bool	forced_update;
++};
++
++static inline int mptcp_balia_sk_can_send(const struct sock *sk)
++{
++	return mptcp_sk_can_send(sk) && tcp_sk(sk)->srtt;
++}
++
++static inline u64 mptcp_get_ai(const struct sock *meta_sk)
++{
++	return ((struct mptcp_balia *)inet_csk_ca(meta_sk))->ai;
++}
++
++static inline void mptcp_set_ai(const struct sock *meta_sk, u64 ai)
++{
++	((struct mptcp_balia *)inet_csk_ca(meta_sk))->ai = ai;
++}
++
++static inline u64 mptcp_get_md(const struct sock *meta_sk)
++{
++	return ((struct mptcp_balia *)inet_csk_ca(meta_sk))->md;
++}
++
++static inline void mptcp_set_md(const struct sock *meta_sk, u64 md)
++{
++	((struct mptcp_balia *)inet_csk_ca(meta_sk))->md = md;
++}
++
++static inline u64 mptcp_balia_scale(u64 val, int scale)
++{
++	return (u64) val << scale;
++}
++
++static inline bool mptcp_get_forced(const struct sock *meta_sk)
++{
++	return ((struct mptcp_balia *)inet_csk_ca(meta_sk))->forced_update;
++}
++
++static inline void mptcp_set_forced(const struct sock *meta_sk, bool force)
++{
++	((struct mptcp_balia *)inet_csk_ca(meta_sk))->forced_update = force;
++}
++
++static void mptcp_balia_recalc_ai(const struct sock *sk)
++{
++	const struct tcp_sock *tp = tcp_sk(sk);
++	const struct mptcp_cb *mpcb = tp->mpcb;
++	const struct sock *sub_sk;
++	u64 max_rate = 0, rate = 0, sum_rate = 0;
++	u64 alpha = 0, ai = 0, md = 0;
++	int num_scale_down = 0;
++
++	if (!mpcb)
++		return;
++
++	/* Only one subflow left - fall back to normal reno-behavior */
++	if (mpcb->cnt_established <= 1)
++		goto exit;
++
++	/* Find max_rate first */
++	mptcp_for_each_sk(mpcb, sub_sk) {
++		struct tcp_sock *sub_tp = tcp_sk(sub_sk);
++		u64 tmp;
++
++		if (!mptcp_balia_sk_can_send(sub_sk))
++			continue;
++
++		tmp = div_u64((u64)tp->mss_cache * sub_tp->snd_cwnd
++				* (MSEC_PER_SEC << 3), sub_tp->srtt);
++		sum_rate += tmp;
++
++		if (tp == sub_tp)
++			rate = tmp;
++
++		if (tmp >= max_rate)
++			max_rate = tmp;
++	}
++
++	/* At least, the current subflow should be able to send */
++	if (unlikely(!rate))
++		goto exit;
++
++	alpha = div64_u64(max_rate, rate);
++
++	/* Scale down max_rate if it is too high (e.g., >2^25) */
++	while (max_rate > mptcp_balia_scale(1, rate_scale_limit)) {
++		max_rate >>= scale_num;
++		num_scale_down++;
++	}
++
++	if (num_scale_down) {
++		sum_rate = 0;
++		mptcp_for_each_sk(mpcb, sub_sk) {
++			struct tcp_sock *sub_tp = tcp_sk(sub_sk);
++			u64 tmp;
++
++			if (!mptcp_balia_sk_can_send(sub_sk))
++				continue;
++
++			tmp = div_u64((u64)tp->mss_cache * sub_tp->snd_cwnd
++				* (MSEC_PER_SEC << 3), sub_tp->srtt);
++			tmp >>= (scale_num * num_scale_down);
++
++			sum_rate += tmp;
++		}
++		rate >>= (scale_num * num_scale_down);
++	}
++
++	/*	(sum_rate)^2 * 10 * w_r
++	 * ai = ------------------------------------
++	 *	(x_r + max_rate) * (4x_r + max_rate)
++	 */
++	sum_rate *= sum_rate;
++
++	ai = div64_u64(sum_rate * 10, rate + max_rate);
++	ai = div64_u64(ai * tp->snd_cwnd, (rate << 2) + max_rate);
++
++	if (unlikely(!ai))
++		ai = tp->snd_cwnd;
++
++	md = ((tp->snd_cwnd >> 1) * min(mptcp_balia_scale(alpha, alpha_scale),
++					mptcp_balia_scale(3, alpha_scale) >> 1))
++					>> alpha_scale;
++
++exit:
++	mptcp_set_ai(sk, ai);
++	mptcp_set_md(sk, md);
++}
++
++static void mptcp_balia_init(struct sock *sk)
++{
++	if (mptcp(tcp_sk(sk))) {
++		mptcp_set_forced(sk, 0);
++		mptcp_set_ai(sk, 0);
++		mptcp_set_md(sk, 0);
++	}
++}
++
++static void mptcp_balia_cwnd_event(struct sock *sk, enum tcp_ca_event event)
++{
++	if (event == CA_EVENT_COMPLETE_CWR || event == CA_EVENT_LOSS)
++		mptcp_balia_recalc_ai(sk);
++}
++
++static void mptcp_balia_set_state(struct sock *sk, u8 ca_state)
++{
++	if (!mptcp(tcp_sk(sk)))
++		return;
++
++	mptcp_set_forced(sk, 1);
++}
++
++static void mptcp_balia_cong_avoid(struct sock *sk, u32 ack, u32 acked, u32 in_flight)
++{
++	struct tcp_sock *tp = tcp_sk(sk);
++	const struct mptcp_cb *mpcb = tp->mpcb;
++	int snd_cwnd;
++
++	if (!mptcp(tp)) {
++		tcp_reno_cong_avoid(sk, ack, acked, in_flight);
++		return;
++	}
++
++	if (!tcp_is_cwnd_limited(sk, in_flight))
++		return;
++
++	if (tp->snd_cwnd <= tp->snd_ssthresh) {
++		/* In "safe" area, increase. */
++		tcp_slow_start(tp, acked);
++		mptcp_balia_recalc_ai(sk);
++		return;
++	}
++
++	if (mptcp_get_forced(mptcp_meta_sk(sk))) {
++		mptcp_balia_recalc_ai(sk);
++		mptcp_set_forced(sk, 0);
++	}
++
++	if (mpcb->cnt_established > 1)
++		snd_cwnd = (int) mptcp_get_ai(sk);
++	else
++		snd_cwnd = tp->snd_cwnd;
++
++	if (tp->snd_cwnd_cnt >= snd_cwnd) {
++		if (tp->snd_cwnd < tp->snd_cwnd_clamp) {
++			tp->snd_cwnd++;
++			mptcp_balia_recalc_ai(sk);
++		}
++
++		tp->snd_cwnd_cnt = 0;
++	} else {
++		tp->snd_cwnd_cnt++;
++	}
++}
++
++static u32 mptcp_balia_ssthresh(struct sock *sk)
++{
++	const struct tcp_sock *tp = tcp_sk(sk);
++	const struct mptcp_cb *mpcb = tp->mpcb;
++
++	if (unlikely(!mptcp(tp) || mpcb->cnt_established <= 1))
++		return tcp_reno_ssthresh(sk);
++	else
++		return max((u32)(tp->snd_cwnd - mptcp_get_md(sk)), 1U);
++}
++
++static struct tcp_congestion_ops mptcp_balia = {
++	.init		= mptcp_balia_init,
++	.ssthresh	= mptcp_balia_ssthresh,
++	.cong_avoid	= mptcp_balia_cong_avoid,
++	.cwnd_event	= mptcp_balia_cwnd_event,
++	.set_state	= mptcp_balia_set_state,
++	.owner		= THIS_MODULE,
++	.name		= "balia",
++};
++
++static int __init mptcp_balia_register(void)
++{
++	BUILD_BUG_ON(sizeof(struct mptcp_balia) > ICSK_CA_PRIV_SIZE);
++	return tcp_register_congestion_control(&mptcp_balia);
++}
++
++static void __exit mptcp_balia_unregister(void)
++{
++	tcp_unregister_congestion_control(&mptcp_balia);
++}
++
++module_init(mptcp_balia_register);
++module_exit(mptcp_balia_unregister);
++
++MODULE_AUTHOR("Jaehyun Hwang, Anwar Walid, Qiuyu Peng, Steven H. Low");
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("MPTCP BALIA CONGESTION CONTROL ALGORITHM");
++MODULE_VERSION("0.1");
+diff --git a/net/mptcp/mptcp_ctrl.c b/net/mptcp/mptcp_ctrl.c
+index 9ad4ef6..d7b17db 100644
+--- a/net/mptcp/mptcp_ctrl.c
++++ b/net/mptcp/mptcp_ctrl.c
+@@ -62,11 +62,12 @@ static struct kmem_cache *mptcp_sock_cache __read_mostly;
+ static struct kmem_cache *mptcp_cb_cache __read_mostly;
+ static struct kmem_cache *mptcp_tw_cache __read_mostly;
+ 
+-int sysctl_mptcp_enabled __read_mostly = 1;
++int sysctl_mptcp_enabled __read_mostly = 2; // let apps enable it explicitly
+ int sysctl_mptcp_checksum __read_mostly = 1;
+ int sysctl_mptcp_debug __read_mostly;
+ EXPORT_SYMBOL(sysctl_mptcp_debug);
+ int sysctl_mptcp_syn_retries __read_mostly = 3;
++int sysctl_mptcp_sbd_sample_spacing __read_mostly = 5; // accept a new sample every X msecs
+ 
+ bool mptcp_init_failed __read_mostly;
+ 
+@@ -140,6 +141,13 @@ static struct ctl_table mptcp_table[] = {
+ 		.mode = 0644,
+ 		.proc_handler = &proc_dointvec
+ 	},
++        {
++                .procname = "mptcp_sbd_sample_spacing",
++                .data = &sysctl_mptcp_sbd_sample_spacing,
++                .maxlen = sizeof(int),
++                .mode = 0644,
++                .proc_handler = &proc_dointvec
++        },
+ 	{
+ 		.procname	= "mptcp_path_manager",
+ 		.mode		= 0644,
+@@ -1211,6 +1219,15 @@ static int mptcp_alloc_mpcb(struct sock *meta_sk, __u64 remote_key, u32 window)
+ 	meta_tp->mptcp->snt_isn = meta_tp->write_seq; /* Initial data-sequence-number */
+ 	meta_icsk->icsk_probes_out = 0;
+ 
++  // record creation time for owd
++  {
++    struct timespec now;
++  	getnstimeofday(&now);
++    mpcb->start_ns = timespec_to_ns(&now);
++  }
++
++  spin_lock_init(&mpcb->group_history_lock);
++
+ 	/* Set mptcp-pointers */
+ 	master_tp->mpcb = mpcb;
+ 	master_tp->meta_sk = meta_sk;
+@@ -1306,7 +1323,7 @@ static int mptcp_alloc_mpcb(struct sock *meta_sk, __u64 remote_key, u32 window)
+ 	/* The meta is directly linked - set refcnt to 1 */
+ 	atomic_set(&mpcb->mpcb_refcnt, 1);
+ 
+-	mptcp_init_path_manager(mpcb);
++	mptcp_init_path_manager(mpcb, meta_tp);
+ 	mptcp_init_scheduler(mpcb);
+ 
+ 	setup_timer(&mpcb->synack_timer, mptcp_synack_timer_handler,
+diff --git a/net/mptcp/mptcp_input.c b/net/mptcp/mptcp_input.c
+index 78af14c..6ec5773 100644
+--- a/net/mptcp/mptcp_input.c
++++ b/net/mptcp/mptcp_input.c
+@@ -1572,6 +1572,8 @@ void mptcp_parse_options(const uint8_t *ptr, int opsize,
+ 	case MPTCP_SUB_CAPABLE:
+ 	{
+ 		struct mp_capable *mpcapable = (struct mp_capable *)ptr;
++		struct sock *sk = skb ? skb->sk : NULL;
++		struct tcp_sock *tp = tcp_sk(sk);
+ 
+ 		if (opsize != MPTCP_SUB_LEN_CAPABLE_SYN &&
+ 		    opsize != MPTCP_SUB_LEN_CAPABLE_ACK) {
+@@ -1790,6 +1792,53 @@ void mptcp_parse_options(const uint8_t *ptr, int opsize,
+ 		mopt->mptcp_key = ((struct mp_fclose *)ptr)->key;
+ 
+ 		break;
++	case MPTCP_SUB_TIMESTAMP:
++	{
++		struct timespec now;
++		s64             recv_usecs;
++		int             loss;
++
++		struct mp_timestamp *mpts = (struct mp_timestamp *)ptr;
++
++		if (opsize != MPTCP_SUB_LEN_TIMESTAMP) {
++			mptcp_debug("%s: mp_timestamp: bad option size %d\n",
++				    __func__, opsize);
++			break;
++		}
++
++		getnstimeofday(&now);
++
++		mopt->mp_timestamp = 1;
++
++		mopt->mptcp_rcv_ns = timespec_to_ns(&now); // local time, in nsecs
++
++		if (mpts->time_usecs & (1<<31))
++			loss = 1;
++		else
++			loss = 0;
++
++		recv_usecs = mpts->time_usecs & 0x7fffffff;
++
++		mopt->mptcp_rcvd_us = recv_usecs; // remote time, in usecs
++		mopt->mptcp_loss = loss;
++		break;
++	}
++	case MPTCP_SUB_GROUP:
++	{
++		struct mp_group *mpgrp = (struct mp_group *)ptr;
++
++		if (opsize != MPTCP_SUB_LEN_GROUP) {
++			mptcp_debug("%s: mp_group: bad option size %d\n",
++				    __func__, opsize);
++			break;
++		}
++
++		mopt->mp_group = 1;
++		mopt->mptcp_group_epoch = mpgrp->epoch;
++		mopt->mptcp_group       = mpgrp->group;
++		mopt->mptcp_group_port  = mpgrp->port;
++		break;
++	}
+ 	default:
+ 		mptcp_debug("%s: Received unkown subtype: %d\n",
+ 			    __func__, mp_opt->sub);
+@@ -2017,6 +2066,114 @@ static inline void mptcp_path_array_check(struct sock *meta_sk)
+ 	}
+ }
+ 
++#define LONG_TERM_MEAN_SCALE 3
++
++static s64 calc_long_term_mean(struct tcp_sock *tp, int dest_index)
++{
++  int i;
++  s64 sum = 0;
++  int count = 0;
++
++  for (i = 0; i < SBD_N; ++i) {
++    struct mptcp_owd_snapshot *snap = &tp->mptcp->owd_snapshots[i];
++    if (snap->index >= dest_index) // current snapshot is not included, if this changes, make sure to clear the cache!
++      continue;
++
++    if (snap->count == 0)
++      continue;
++
++    if (snap->cache_local_mean == 0) // avoid recalculation all the time
++      snap->cache_local_mean = div_s64(snap->sum_usecs << LONG_TERM_MEAN_SCALE, snap->count);
++
++    sum += snap->cache_local_mean;
++    count++;
++  }
++
++  if (count == 0)
++    return 0;
++
++  return div_s64(sum, count);
++}
++
++extern int sysctl_mptcp_sbd_sample_spacing;
++
++static void mptcp_handle_owd(struct tcp_sock *tp, s64 when_nsecs, s64 owd_usecs, int loss)
++{
++	s64 when_rel_start_nsecs = when_nsecs - tp->mpcb->start_ns;
++	int dest_index = (int)div_s64(when_rel_start_nsecs, SBD_T * 1000000);
++
++	if (tp->mptcp->owd_snapshot_next + SBD_N < dest_index) {
++		tp->mptcp->owd_snapshot_next = dest_index - SBD_N - 1;
++	}
++
++	for (;;) {
++		if (dest_index < tp->mptcp->owd_snapshot_next) {
++			printk(KERN_ERR "asked to handle OWD for old snapshot\n");
++			return;
++		}
++		else if (dest_index == tp->mptcp->owd_snapshot_next) {
++			s64 mean_delay, scaled_owd_usecs;
++			struct mptcp_owd_snapshot *snap;
++			int snap_idx = tp->mptcp->owd_snapshot_next % SBD_N;
++			if (snap_idx < 0) {
++				printk(KERN_ERR "snap_idx overflow!\n");
++				return;
++			}
++
++			snap = &tp->mptcp->owd_snapshots[snap_idx];
++
++			if (loss)
++				snap->loss_count++;
++
++			if (sysctl_mptcp_sbd_sample_spacing > 0) {
++				int sub_index = (int)div_s64(when_rel_start_nsecs, sysctl_mptcp_sbd_sample_spacing * 1000000);
++				if (sub_index < snap->next_sample_allowed)
++					return; // not yet allowed to take a sample
++				snap->next_sample_allowed = sub_index + 1;
++			}
++
++      snap->sum_usecs += owd_usecs;
++			snap->count += 1;
++      if (owd_usecs > snap->max_usecs)
++        snap->max_usecs = owd_usecs;
++
++      mean_delay = calc_long_term_mean(tp, dest_index);
++      scaled_owd_usecs = owd_usecs << LONG_TERM_MEAN_SCALE;
++      if (scaled_owd_usecs < mean_delay)
++        snap->skew_lcount++;
++      else if (scaled_owd_usecs > mean_delay)
++        snap->skew_rcount++;
++
++      break;
++		}
++		else {
++			int snap_idx;
++
++			tp->mptcp->owd_snapshot_next++;
++
++			snap_idx = tp->mptcp->owd_snapshot_next % SBD_N;
++			if (snap_idx < 0) {
++				printk(KERN_ERR "snap_idx overflow!\n");
++				return;
++			}
++
++			memset(&tp->mptcp->owd_snapshots[snap_idx], 0, sizeof(struct mptcp_owd_snapshot));
++			tp->mptcp->owd_snapshots[snap_idx].index = tp->mptcp->owd_snapshot_next;
++		}
++	}
++}
++
++struct tcp_sock *get_mptcp_flow(struct mptcp_cb *mpcb, u16 port) {
++	struct sock *sk_it;
++	mptcp_for_each_sk(mpcb, sk_it) {
++		struct inet_sock *inet_it = inet_sk(sk_it);
++		struct tcp_sock *tp_it = tcp_sk(sk_it);
++		if (inet_it->inet_dport == port)
++			return tp_it;
++	}
++	return 0;
++}
++
+ int mptcp_handle_options(struct sock *sk, const struct tcphdr *th, struct sk_buff *skb)
+ {
+ 	struct tcp_sock *tp = tcp_sk(sk);
+@@ -2085,6 +2242,45 @@ int mptcp_handle_options(struct sock *sk, const struct tcphdr *th, struct sk_buf
+ 	if (tp->mp_killed)
+ 		return 1;
+ 
++	if (mopt->mp_timestamp) {
++		s64 owd_us, rcv_us;
++
++		rcv_us = mopt->mptcp_rcv_ns - tp->mpcb->start_ns; // relative to socket creation
++		rcv_us = div_s64(rcv_us, 1000); // from nsecs to usecs
++		rcv_us &= 0x7fffffff; // cut back to 31 bit, like the timestamp we received
++
++		owd_us = rcv_us - mopt->mptcp_rcvd_us; // delta in usecs
++
++		mptcp_handle_owd(tp, mopt->mptcp_rcv_ns, owd_us, mopt->mptcp_loss);
++	}
++
++	if (mopt->mp_group) {
++		struct tcp_sock *pi_tp = get_mptcp_flow(tp->mpcb, mopt->mptcp_group_port);
++		if (pi_tp) {
++			int i, found = -1;
++
++			spin_lock_bh(&tp->mpcb->group_history_lock);
++
++			// check if this epoch is already in the group history
++			for (i = 0; i < MPTCP_GROUP_HISTORY_SIZE; ++i) {
++			  if (pi_tp->mptcp->group_history[i].epoch == mopt->mptcp_group_epoch) {
++				found = i;
++				break;
++			  }
++			}
++
++			// .. if not insert it
++			if (found == -1) {
++			  int dest = pi_tp->mptcp->group_history_next;
++			  pi_tp->mptcp->group_history[dest].epoch = mopt->mptcp_group_epoch;
++			  pi_tp->mptcp->group_history[dest].group = mopt->mptcp_group;
++			  pi_tp->mptcp->group_history_next = (dest + 1) % MPTCP_GROUP_HISTORY_SIZE;
++			}
++
++			spin_unlock_bh(&tp->mpcb->group_history_lock);
++		}
++	}
++
+ 	return 0;
+ }
+ 
+diff --git a/net/mptcp/mptcp_ndiffports.c b/net/mptcp/mptcp_ndiffports.c
+index cc1c784..6e924cb 100644
+--- a/net/mptcp/mptcp_ndiffports.c
++++ b/net/mptcp/mptcp_ndiffports.c
+@@ -32,7 +32,9 @@ static void create_subflow_worker(struct work_struct *work)
+ 						     subflow_work);
+ 	struct mptcp_cb *mpcb = pm_priv->mpcb;
+ 	struct sock *meta_sk = mpcb->meta_sk;
++	struct tcp_sock *meta_tp = tcp_sk(meta_sk);
+ 	int iter = 0;
++	int ndiffports;
+ 
+ next_subflow:
+ 	if (iter) {
+@@ -53,7 +55,11 @@ next_subflow:
+ 	    !tcp_sk(mpcb->master_sk)->mptcp->fully_established)
+ 		goto exit;
+ 
+-	if (num_subflows > iter && num_subflows > mpcb->cnt_subflows) {
++	ndiffports = num_subflows;
++	if (meta_tp->ndiffports > 0)
++		ndiffports = meta_tp->ndiffports;
++
++	if (ndiffports > iter && ndiffports > mpcb->cnt_subflows) {
+ 		if (meta_sk->sk_family == AF_INET ||
+ 		    mptcp_v6_is_v4_mapped(meta_sk)) {
+ 			struct mptcp_loc4 loc;
+diff --git a/net/mptcp/mptcp_olia.c b/net/mptcp/mptcp_olia.c
+index 641f27b..d4a41a5 100644
+--- a/net/mptcp/mptcp_olia.c
++++ b/net/mptcp/mptcp_olia.c
+@@ -282,12 +282,31 @@ static void mptcp_olia_cong_avoid(struct sock *sk, u32 ack, u32 acked, u32 in_fl
+ 	}
+ }
+ 
++static u32 mptcp_olia_ssthresh(struct sock *sk)
++{
++	const struct tcp_sock *tp = tcp_sk(sk);
++	const struct mptcp_cb *mpcb = tp->mpcb;
++
++	if (unlikely(!mptcp(tp) || mpcb->cnt_established <= 1))
++		return tcp_reno_ssthresh(sk);
++    else
++		return max(tp->snd_cwnd >> 1U, 1U); // let it go down to 1
++}
++
++// identical to tcp_reno_min_cwnd but can deal with ssthresh=1
++// (and then doesn't let CWND go below 1)
++static u32 mptcp_olia_min_cwnd(const struct sock *sk)
++{
++    const struct tcp_sock *tp = tcp_sk(sk);
++    return max(tp->snd_ssthresh/2, 1U);
++}
++
+ static struct tcp_congestion_ops mptcp_olia = {
+ 	.init		= mptcp_olia_init,
+-	.ssthresh	= tcp_reno_ssthresh,
++	.ssthresh	= mptcp_olia_ssthresh,
+ 	.cong_avoid	= mptcp_olia_cong_avoid,
+ 	.set_state	= mptcp_olia_set_state,
+-	.min_cwnd	= tcp_reno_min_cwnd,
++	.min_cwnd	= mptcp_olia_min_cwnd,
+ 	.owner		= THIS_MODULE,
+ 	.name		= "olia",
+ };
+diff --git a/net/mptcp/mptcp_oliasbdx.c b/net/mptcp/mptcp_oliasbdx.c
+new file mode 100644
+index 0000000..447c78f
+--- /dev/null
++++ b/net/mptcp/mptcp_oliasbdx.c
+@@ -0,0 +1,515 @@
++/*
++ * MPTCP implementation - OPPORTUNISTIC LINKED INCREASES CONGESTION CONTROL:
++ *
++ * Algorithm design:
++ * Ramin Khalili <ramin.khalili@epfl.ch>
++ * Nicolas Gast <nicolas.gast@epfl.ch>
++ * Jean-Yves Le Boudec <jean-yves.leboudec@epfl.ch>
++ *
++ * Implementation:
++ * Ramin Khalili <ramin.khalili@epfl.ch>
++ *
++ * Ported to the official MPTCP-kernel:
++ * Christoph Paasch <christoph.paasch@uclouvain.be>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version
++ * 2 of the License, or (at your option) any later version.
++ */
++
++
++#include <net/tcp.h>
++#include <net/mptcp.h>
++
++#include <linux/module.h>
++
++static unsigned char debug_mode __read_mostly = 0;
++module_param(debug_mode, byte, 0644);
++MODULE_PARM_DESC(debug_mode, "If not 0, will print information via printk(KERN_ERR).");
++
++static int scale = 10;
++
++struct mptcp_olia {
++	u32	mptcp_loss1;
++	u32	mptcp_loss2;
++	u32	mptcp_loss3;
++	int	epsilon_num;
++	u32	epsilon_den;
++	int	mptcp_snd_cwnd_cnt;
++};
++
++static u16 mptcp_olia_get_latest_epoch(struct mptcp_cb *mpcb)
++{
++	u16 latest_epoch = 0; /* invalid epoch */
++
++	struct sock *sk_it;
++
++	mptcp_for_each_sk(mpcb, sk_it) {
++		struct tcp_sock *tp_it = tcp_sk(sk_it);
++		int idx;
++		u16 epoch;
++
++		if (!mptcp_sk_can_send(sk_it))
++			continue;
++		if (!tcp_sk(sk_it)->srtt)
++			continue;
++
++		idx = (tp_it->mptcp->group_history_next - 1 + MPTCP_GROUP_HISTORY_SIZE) % MPTCP_GROUP_HISTORY_SIZE; /* index of latest item */
++		epoch = tp_it->mptcp->group_history[idx].epoch;
++		if (epoch > latest_epoch)
++			latest_epoch = epoch;
++	}
++
++	return latest_epoch;
++}
++
++// -1 if no data available
++// non-negative number: group
++static int mptcp_olia_get_subflow_group_nofilter99(u16 epoch, struct sock *sk)
++{
++	int i, group = -1;
++	struct tcp_sock *tp = tcp_sk(sk);
++
++	if (epoch == 0)
++		return -1; // invalid epoch, definitely no group
++
++	if (!mptcp_sk_can_send(sk))
++		return -1;
++	if (!tcp_sk(sk)->srtt)
++		return -1;
++
++	for (i = 0; i < MPTCP_GROUP_HISTORY_SIZE; i++) {
++		if (debug_mode > 1) printk(KERN_ERR "flow %i, idx %i, epoch %i, group %i\n", tcp_sk(sk)->mptcp->path_index, i, tp->mptcp->group_history[i].epoch, tp->mptcp->group_history[i].group);
++		if (tp->mptcp->group_history[i].epoch == epoch) {
++			group = tp->mptcp->group_history[i].group;
++			break;
++		}
++	}
++
++	return group;
++}
++
++static int mptcp_olia_get_subflow_group(u16 epoch, struct sock *sk)
++{
++  int group = mptcp_olia_get_subflow_group_nofilter99(epoch, sk);
++  // -1 means we have no information at all about a flow
++  // 99 means a flow is not congested, then we also have no grouping information
++  if (group == 99)
++    group = -1;
++  return group;
++}
++
++static int mptcp_olia_subflow_has_group_epochs(struct sock *sk)
++{
++	struct tcp_sock *tp = tcp_sk(sk);
++	int idx;
++	u16 epoch;
++
++	if (!mptcp_sk_can_send(sk))
++		return 0;
++	if (!tcp_sk(sk)->srtt)
++		return 0;
++
++	idx = (tp->mptcp->group_history_next - 1 + MPTCP_GROUP_HISTORY_SIZE) % MPTCP_GROUP_HISTORY_SIZE; /* index of latest item */
++	epoch = tp->mptcp->group_history[idx].epoch;
++	return (epoch > 0); // last received epoch is valid
++}
++
++static u16 mptcp_olia_get_epoch(struct mptcp_cb *mpcb)
++{
++	int i;
++	int all_have_epoch;
++
++	u16 latest_epoch = mptcp_olia_get_latest_epoch(mpcb);
++	if (latest_epoch == 0) {
++		if (debug_mode > 1) printk(KERN_ERR "do not have any epoch yet!\n");
++		return 0; // don't have any epoch
++	}
++
++	// look at all subflows: return the epoch that all subflows have
++	// (exception: subflows that don't have any epoch data yet are ignored - they just appeared)
++	for (i = 0; i < MPTCP_GROUP_HISTORY_SIZE; i++) {
++		struct sock *sk_it;
++
++		u16 search_epoch = latest_epoch - i;
++		if (search_epoch == 0)
++			break; // done here
++
++		all_have_epoch = 1; // start with the assumpation that all have data for this epoch
++		mptcp_for_each_sk(mpcb, sk_it) {
++			int group;
++			if (!mptcp_olia_subflow_has_group_epochs(sk_it)) {
++				if (debug_mode > 1) printk(KERN_ERR "skipping flow %i, no group data at all\n", tcp_sk(sk_it)->mptcp->path_index);
++				continue; // if this subflow has no group data at all, ignore it
++			}
++
++			group = mptcp_olia_get_subflow_group_nofilter99(search_epoch, sk_it); // do not translate 99 to -1 or check below will be wrong!
++			if (group == -1) {
++				if (debug_mode > 1) printk(KERN_ERR "skipping flow %i, no group data in epoch %i\n", tcp_sk(sk_it)->mptcp->path_index, search_epoch);
++				all_have_epoch = 0; // this one doesn't have data in the epoch
++				break;
++			}
++		}
++
++		if (all_have_epoch)
++			return search_epoch;
++	}
++
++	if (debug_mode > 1) printk(KERN_ERR "couldn't find shared epoch!\n");
++	return 0; // invalid epoch
++}
++
++static int mptcp_olia_sk_can_send(struct sock *sk, u16 epoch, int group)
++{
++	int sk_group;
++
++	if (!mptcp_sk_can_send(sk))
++		return 0;
++
++	if (!tcp_sk(sk)->srtt)
++		return 0;
++
++	// in case we are doing CA for a non-congested flow:
++	// consider all flows regardless of their group for coupling
++	if (group == -1)
++		return 1;
++
++	// if we are doing CA for a flow that is in a group:
++	// do not consider flows from other groups, but DO CONSIDER
++	// non-congested (-1/99) flows because they might appear
++	// in the group at any moment and we want to be careful
++	sk_group = mptcp_olia_get_subflow_group(epoch, sk);
++	if (sk_group == -1)
++		return 1; // other is non-congested
++	else if (sk_group == group)
++		return 1; // same group
++	else
++		return 0; // different group
++}
++
++static inline u64 mptcp_olia_scale(u64 val, int scale)
++{
++	return (u64) val << scale;
++}
++
++/* take care of artificially inflate (see RFC5681)
++ * of cwnd during fast-retransmit phase
++ */
++static u32 mptcp_get_crt_cwnd(struct sock *sk)
++{
++	struct inet_connection_sock *icsk = inet_csk(sk);
++
++	if (icsk->icsk_ca_state == TCP_CA_Recovery)
++		return tcp_sk(sk)->snd_ssthresh;
++	else
++		return tcp_sk(sk)->snd_cwnd;
++}
++
++/* return the dominator of the first term of  the increasing term */
++static u64 mptcp_get_rate(struct mptcp_cb *mpcb , u32 path_rtt, u16 epoch, int group)
++{
++	struct sock *sk;
++	u64 rate = 1; /* We have to avoid a zero-rate because it is used as a divisor */
++
++	mptcp_for_each_sk(mpcb, sk) {
++		struct tcp_sock *tp = tcp_sk(sk);
++		u64 scaled_num;
++		u32 tmp_cwnd;
++
++		if (!mptcp_olia_sk_can_send(sk, epoch, group))
++			continue;
++
++		tmp_cwnd = mptcp_get_crt_cwnd(sk);
++		scaled_num = mptcp_olia_scale(tmp_cwnd, scale) * path_rtt;
++		rate += div_u64(scaled_num , tp->srtt);
++	}
++	rate *= rate;
++	return rate;
++}
++
++/* find the maximum cwnd, used to find set M */
++static u32 mptcp_get_max_cwnd(struct mptcp_cb *mpcb, u16 epoch, int group)
++{
++	struct sock *sk;
++	u32 best_cwnd = 0;
++
++	mptcp_for_each_sk(mpcb, sk) {
++		u32 tmp_cwnd;
++
++		if (!mptcp_olia_sk_can_send(sk, epoch, group))
++			continue;
++
++		tmp_cwnd = mptcp_get_crt_cwnd(sk);
++		if (tmp_cwnd > best_cwnd)
++			best_cwnd = tmp_cwnd;
++	}
++	return best_cwnd;
++}
++
++static void mptcp_get_epsilon(struct mptcp_cb *mpcb, u16 epoch, int group)
++{
++	struct mptcp_olia *ca;
++	struct tcp_sock *tp;
++	struct sock *sk;
++	u64 tmp_int, tmp_rtt, best_int = 0, best_rtt = 1;
++	u32 max_cwnd = 1, best_cwnd = 1, tmp_cwnd;
++	u8 M = 0, B_not_M = 0;
++	int group_cnt = 0;
++
++	/* TODO - integrate this in the following loop - we just want to iterate once */
++
++	max_cwnd = mptcp_get_max_cwnd(mpcb, epoch, group);
++
++	/* find the best path */
++	mptcp_for_each_sk(mpcb, sk) {
++		tp = tcp_sk(sk);
++		ca = inet_csk_ca(sk);
++
++		if (!mptcp_olia_sk_can_send(sk, epoch, group))
++			continue;
++
++		// count the flow
++		group_cnt++;
++
++		tmp_rtt = (u64)tp->srtt * tp->srtt;
++		/* TODO - check here and rename variables */
++		tmp_int = max(ca->mptcp_loss3 - ca->mptcp_loss2,
++			      ca->mptcp_loss2 - ca->mptcp_loss1);
++
++		tmp_cwnd = mptcp_get_crt_cwnd(sk);
++		if ((u64)tmp_int * best_rtt >= (u64)best_int * tmp_rtt) {
++			best_rtt = tmp_rtt;
++			best_int = tmp_int;
++			best_cwnd = tmp_cwnd;
++		}
++	}
++
++	/* TODO - integrate this here in mptcp_get_max_cwnd and in the previous loop */
++	/* find the size of M and B_not_M */
++	mptcp_for_each_sk(mpcb, sk) {
++		tp = tcp_sk(sk);
++		ca = inet_csk_ca(sk);
++
++		if (!mptcp_olia_sk_can_send(sk, epoch, group))
++			continue;
++
++		tmp_cwnd = mptcp_get_crt_cwnd(sk);
++		if (tmp_cwnd == max_cwnd) {
++			M++;
++		} else {
++			tmp_rtt = (u64)tp->srtt * tp->srtt;
++			tmp_int = max(ca->mptcp_loss3 - ca->mptcp_loss2,
++				      ca->mptcp_loss2 - ca->mptcp_loss1);
++
++			if ((u64)tmp_int * best_rtt == (u64)best_int * tmp_rtt)
++				B_not_M++;
++		}
++	}
++
++	/* check if the path is in M or B_not_M and set the value of epsilon accordingly */
++	mptcp_for_each_sk(mpcb, sk) {
++		tp = tcp_sk(sk);
++		ca = inet_csk_ca(sk);
++
++		if (!mptcp_olia_sk_can_send(sk, epoch, group))
++			continue;
++
++		if (B_not_M == 0) {
++			ca->epsilon_num = 0;
++			ca->epsilon_den = 1;
++		} else {
++			tmp_rtt = (u64)tp->srtt * tp->srtt;
++			tmp_int = max(ca->mptcp_loss3 - ca->mptcp_loss2,
++				      ca->mptcp_loss2 - ca->mptcp_loss1);
++			tmp_cwnd = mptcp_get_crt_cwnd(sk);
++
++			if (tmp_cwnd < max_cwnd &&
++			    (u64)tmp_int * best_rtt == (u64)best_int * tmp_rtt) {
++				ca->epsilon_num = 1;
++				ca->epsilon_den = group_cnt * B_not_M;
++			} else if (tmp_cwnd == max_cwnd) {
++				ca->epsilon_num = -1;
++				ca->epsilon_den = group_cnt * M;
++			} else {
++				ca->epsilon_num = 0;
++				ca->epsilon_den = 1;
++			}
++		}
++	}
++}
++
++/* setting the initial values */
++static void mptcp_olia_init(struct sock *sk)
++{
++	struct tcp_sock *tp = tcp_sk(sk);
++	struct mptcp_olia *ca = inet_csk_ca(sk);
++
++	if (mptcp(tp)) {
++		ca->mptcp_loss1 = tp->snd_una;
++		ca->mptcp_loss2 = tp->snd_una;
++		ca->mptcp_loss3 = tp->snd_una;
++		ca->mptcp_snd_cwnd_cnt = 0;
++		ca->epsilon_num = 0;
++		ca->epsilon_den = 1;
++	}
++}
++
++/* updating inter-loss distance and ssthresh */
++static void mptcp_olia_set_state(struct sock *sk, u8 new_state)
++{
++	if (!mptcp(tcp_sk(sk)))
++		return;
++
++	if (new_state == TCP_CA_Loss ||
++	    new_state == TCP_CA_Recovery || new_state == TCP_CA_CWR) {
++		struct mptcp_olia *ca = inet_csk_ca(sk);
++
++		if (ca->mptcp_loss3 != ca->mptcp_loss2 &&
++		    !inet_csk(sk)->icsk_retransmits) {
++			ca->mptcp_loss1 = ca->mptcp_loss2;
++			ca->mptcp_loss2 = ca->mptcp_loss3;
++		}
++	}
++}
++
++/* group == -1:
++   OLIA for subflows that do not have grouping
++   When a subflow has no grouping yet, we calculate OLIA increase by considering all subflows
++   not just the ones in its group (it does not have a group!)
++   group >= 0:
++   OLIA for subflows that do have grouping
++   When a subflow has grouping, we calculate OLIA increase by considering all subflows in the group
++   and all flows without a group - we want to couple against them, too, because they
++   could appear in the group in any moment!
++*/
++static void mptcp_olia_cong_avoid(struct sock *sk, u32 ack, u32 acked, u32 in_flight)
++{
++	struct tcp_sock *tp = tcp_sk(sk);
++	struct mptcp_olia *ca = inet_csk_ca(sk);
++	struct mptcp_cb *mpcb = tp->mpcb;
++	struct sock *sk_it;
++
++	u16 epoch;
++	int group, group_cnt;
++
++	u64 inc_num, inc_den, rate, cwnd_scaled;
++
++	if (!mptcp(tp)) {
++		tcp_reno_cong_avoid(sk, ack, acked, in_flight);
++		return;
++	}
++
++	ca->mptcp_loss3 = tp->snd_una;
++
++	if (!tcp_is_cwnd_limited(sk, in_flight))
++		return;
++
++	/* slow start if it is in the safe area */
++	if (tp->snd_cwnd <= tp->snd_ssthresh) {
++		tcp_slow_start(tp, acked);
++		return;
++	}
++
++	epoch = mptcp_olia_get_epoch(mpcb);
++	group = mptcp_olia_get_subflow_group(epoch, sk);
++
++	// count the flows and determine whether we can simply do reno!
++	group_cnt = 0;
++	mptcp_for_each_sk(mpcb, sk_it) {
++		if (!mptcp_olia_sk_can_send(sk_it, epoch, group))
++			continue;
++		group_cnt++;
++	}
++	if (group_cnt == 1) {
++		if (debug_mode) printk(KERN_ERR "RENO pi %i: epoch %i group %i\n", tp->mptcp->path_index, epoch, group);
++		// alone in the group means we do reno!
++		tcp_reno_cong_avoid(sk, ack, acked, in_flight);
++		return;
++	}
++
++	if (debug_mode) printk(KERN_ERR "OLIA(%i) pi %i: epoch %i group %i\n", group_cnt, tp->mptcp->path_index, epoch, group);
++
++	mptcp_get_epsilon(mpcb, epoch, group);
++	rate = mptcp_get_rate(mpcb, tp->srtt, epoch, group);
++	cwnd_scaled = mptcp_olia_scale(tp->snd_cwnd, scale);
++	inc_den = ca->epsilon_den * tp->snd_cwnd * rate ? : 1;
++
++	/* calculate the increasing term, scaling is used to reduce the rounding effect */
++	if (ca->epsilon_num == -1) {
++		if (ca->epsilon_den * cwnd_scaled * cwnd_scaled < rate) {
++			inc_num = rate - ca->epsilon_den *
++				cwnd_scaled * cwnd_scaled;
++			ca->mptcp_snd_cwnd_cnt -= div64_u64(
++			    mptcp_olia_scale(inc_num , scale) , inc_den);
++		} else {
++			inc_num = ca->epsilon_den *
++			    cwnd_scaled * cwnd_scaled - rate;
++			ca->mptcp_snd_cwnd_cnt += div64_u64(
++			    mptcp_olia_scale(inc_num , scale) , inc_den);
++		}
++	} else {
++		inc_num = ca->epsilon_num * rate +
++		    ca->epsilon_den * cwnd_scaled * cwnd_scaled;
++		ca->mptcp_snd_cwnd_cnt += div64_u64(
++		    mptcp_olia_scale(inc_num , scale) , inc_den);
++	}
++
++
++	if (ca->mptcp_snd_cwnd_cnt >= (1 << scale) - 1) {
++		if (tp->snd_cwnd < tp->snd_cwnd_clamp)
++			tp->snd_cwnd++;
++		ca->mptcp_snd_cwnd_cnt = 0;
++	} else if (ca->mptcp_snd_cwnd_cnt <= 0 - (1 << scale) + 1) {
++		tp->snd_cwnd = max((int) 1 , (int) tp->snd_cwnd - 1);
++		ca->mptcp_snd_cwnd_cnt = 0;
++	}
++}
++
++static u32 mptcp_olia_ssthresh(struct sock *sk)
++{
++	const struct tcp_sock *tp = tcp_sk(sk);
++	const struct mptcp_cb *mpcb = tp->mpcb;
++
++	if (unlikely(!mptcp(tp) || mpcb->cnt_established <= 1))
++		return tcp_reno_ssthresh(sk);
++    else // TODO if it is alone in its group, should it behave like reno?
++		return max(tp->snd_cwnd >> 1U, 1U); // let it go down to 1
++}
++
++// identical to tcp_reno_min_cwnd but can deal with ssthresh=1
++// (and then doesn't let CWND go below 1)
++static u32 mptcp_olia_min_cwnd(const struct sock *sk)
++{
++    const struct tcp_sock *tp = tcp_sk(sk);
++    return max(tp->snd_ssthresh/2, 1U);
++}
++
++static struct tcp_congestion_ops mptcp_oliasbdx = {
++	.init		= mptcp_olia_init,
++	.ssthresh	= mptcp_olia_ssthresh,
++	.cong_avoid	= mptcp_olia_cong_avoid,
++	.set_state	= mptcp_olia_set_state,
++	.min_cwnd	= mptcp_olia_min_cwnd,
++	.owner		= THIS_MODULE,
++	.name		= "oliasbdx",
++};
++
++static int __init mptcp_olia_register(void)
++{
++	BUILD_BUG_ON(sizeof(struct mptcp_olia) > ICSK_CA_PRIV_SIZE);
++	return tcp_register_congestion_control(&mptcp_oliasbdx);
++}
++
++static void __exit mptcp_olia_unregister(void)
++{
++	tcp_unregister_congestion_control(&mptcp_oliasbdx);
++}
++
++module_init(mptcp_olia_register);
++module_exit(mptcp_olia_unregister);
++
++MODULE_AUTHOR("Ramin Khalili, Nicolas Gast, Jean-Yves Le Boudec, Simone Ferlin");
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION("MPTCP COUPLED CONGESTION CONTROL FOR SBD");
++MODULE_VERSION("0.1");
+diff --git a/net/mptcp/mptcp_output.c b/net/mptcp/mptcp_output.c
+index 9fd49f8..d915850 100644
+--- a/net/mptcp/mptcp_output.c
++++ b/net/mptcp/mptcp_output.c
+@@ -30,6 +30,7 @@
+ #include <linux/kconfig.h>
+ #include <linux/skbuff.h>
+ #include <linux/tcp.h>
++#include <linux/time.h>
+ 
+ #include <net/mptcp.h>
+ #include <net/mptcp_v4.h>
+@@ -893,6 +894,7 @@ void mptcp_established_options(struct sock *sk, struct sk_buff *skb,
+ 	struct tcp_sock *tp = tcp_sk(sk);
+ 	struct mptcp_cb *mpcb = tp->mpcb;
+ 	struct tcp_skb_cb *tcb = skb ? TCP_SKB_CB(skb) : NULL;
++	int has_groups = 0;
+ 
+ 	/* In fallback mp_fail-mode, we have to repeat it until the fallback
+ 	 * has been done by the sender
+@@ -986,6 +988,24 @@ void mptcp_established_options(struct sock *sk, struct sk_buff *skb,
+ 		*size += MPTCP_SUB_LEN_PRIO_ALIGN;
+ 	}
+ 
++	if (MAX_TCP_OPTION_SPACE - *size >= MPTCP_SUB_LEN_GROUP_ALIGN) {
++		if (tp->mpcb->groups_epoch > 0) { // groups have been set
++			opts->options |= OPTION_MPTCP;
++			opts->mptcp_options |= OPTION_MP_GROUP;
++			*size += MPTCP_SUB_LEN_GROUP_ALIGN;
++			has_groups = 1;
++		}
++	}
++
++	// NOTE: either GROUP or TIMESTAMP!
++	if (!has_groups) {
++	  if (MAX_TCP_OPTION_SPACE - *size >= MPTCP_SUB_LEN_TIMESTAMP_ALIGN) {
++		  opts->options |= OPTION_MPTCP;
++		  opts->mptcp_options |= OPTION_MP_TIMESTAMP;
++		  *size += MPTCP_SUB_LEN_TIMESTAMP_ALIGN;
++	  }
++  }
++
+ 	return;
+ }
+ 
+@@ -1001,6 +1021,23 @@ u16 mptcp_select_window(struct sock *sk)
+ 	return new_win;
+ }
+ 
++u16 mptcp_get_subflow_port(struct tcp_sock *meta_tp, int pi)
++{
++       struct sock *sk_it;
++
++       if (!meta_tp)
++               return 0;
++
++       mptcp_for_each_sk(meta_tp->mpcb, sk_it) {
++               const struct tcp_sock *tp = tcp_sk(sk_it);
++               if (tp->mptcp && tp->mptcp->path_index == pi) {
++			const struct inet_sock *inet = inet_sk(sk_it);
++			return inet->inet_sport;
++               }
++       }
++       return 0;
++}
++
+ void mptcp_options_write(__be32 *ptr, struct tcp_sock *tp,
+ 			 struct tcp_out_options *opts,
+ 			 struct sk_buff *skb)
+@@ -1149,6 +1186,59 @@ void mptcp_options_write(__be32 *ptr, struct tcp_sock *tp,
+ 
+ 		ptr += MPTCP_SUB_LEN_PRIO_ALIGN >> 2;
+ 	}
++
++	if (unlikely(OPTION_MP_GROUP & opts->mptcp_options)) {
++		struct mp_group *mpgrp = (struct mp_group *)ptr;
++
++		// determine for which subflow group info should be sent
++		int i, pi = tp->mpcb->next_groups_pi % 32;
++		int found = 0;
++		for (i = 0; i < 32; ++i) {
++			if (tp->mpcb->groups[pi] >= 0) {
++				found = 1;
++				break; // if this one has a group, we'll send info about it
++			}
++			pi = (pi + 1) % 32;
++		}
++		tp->mpcb->next_groups_pi = pi + 1;
++
++		mpgrp->kind = TCPOPT_MPTCP;
++		mpgrp->len = MPTCP_SUB_LEN_GROUP;
++		mpgrp->sub = MPTCP_SUB_GROUP;
++		mpgrp->rsv1 = 0;
++		mpgrp->rsv2 = 0;
++
++		mpgrp->epoch = tp->mpcb->groups_epoch;
++		mpgrp->group = tp->mpcb->groups[pi];
++		mpgrp->port  = found ? mptcp_get_subflow_port(mptcp_meta_tp(tp), pi) : 0; // there is no port zero, receiver will not do anything with this here
++
++		ptr += MPTCP_SUB_LEN_GROUP_ALIGN >> 2;
++	}
++
++	if (unlikely(OPTION_MP_TIMESTAMP & opts->mptcp_options)) {
++		struct timespec now;
++		struct mp_timestamp *mpts = (struct mp_timestamp *)ptr;
++		s64 now_us;
++
++		getnstimeofday(&now);
++		now_us = timespec_to_ns(&now) - tp->mpcb->start_ns; // relative to socket creation
++		now_us = div_s64(now_us, 1000); // from nsecs to usecs
++
++		mpts->kind = TCPOPT_MPTCP;
++		mpts->len = MPTCP_SUB_LEN_TIMESTAMP;
++		mpts->sub = MPTCP_SUB_TIMESTAMP;
++		mpts->rsv1 = 0;
++		mpts->rsv2 = 0;
++
++		mpts->time_usecs = now_us & 0x7fffffff; // 32 bit
++
++		if (tp->loss_count > 0) {
++			tp->loss_count--;
++			mpts->time_usecs |= (1 << 31);
++		}
++
++		ptr += MPTCP_SUB_LEN_TIMESTAMP_ALIGN >> 2;
++	}
+ }
+ 
+ /* Sends the datafin */
+diff --git a/net/mptcp/mptcp_pm.c b/net/mptcp/mptcp_pm.c
+index 9542f95..b3dcf8c 100644
+--- a/net/mptcp/mptcp_pm.c
++++ b/net/mptcp/mptcp_pm.c
+@@ -46,7 +46,7 @@ struct mptcp_pm_ops mptcp_pm_default = {
+ 	.owner = THIS_MODULE,
+ };
+ 
+-static struct mptcp_pm_ops *mptcp_pm_find(const char *name)
++struct mptcp_pm_ops *mptcp_pm_find(const char *name)
+ {
+ 	struct mptcp_pm_ops *e;
+ 
+@@ -127,10 +127,18 @@ int mptcp_set_default_path_manager(const char *name)
+ 	return ret;
+ }
+ 
+-void mptcp_init_path_manager(struct mptcp_cb *mpcb)
++void mptcp_init_path_manager(struct mptcp_cb *mpcb, struct tcp_sock *meta_tp)
+ {
+ 	struct mptcp_pm_ops *pm;
+ 
++	if (meta_tp->mptcp_pm) {
++		pm = meta_tp->mptcp_pm;
++		if (try_module_get(pm->owner)) {
++			mpcb->pm_ops = pm;
++			return;
++		}
++	}
++
+ 	rcu_read_lock();
+ 	list_for_each_entry_rcu(pm, &mptcp_pm_list, list) {
+ 		if (try_module_get(pm->owner)) {
