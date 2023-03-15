@@ -204,19 +204,19 @@ def run():
     # tcpdump -i server-eth1
     if with_background == 1:
 
-        net['client1'].cmd("nice -n -10 ./background_sbd_original.py 'CLIENT' 10.0.5.2 9999 1 2 1 3000 &") 
-        net['client2'].cmd("nice -n -10 ./background_sbd_original.py 'CLIENT' 10.0.7.2 9980 2 2 1 3000 &") 
+        net['client1'].cmd("nice -n -10 ./background_sbd.py 'CLIENT' 10.0.5.2 9999 1 2 1 3000 &") 
+        net['client2'].cmd("nice -n -10 ./background_sbd.py 'CLIENT' 10.0.7.2 9980 2 2 1 3000 &") 
 
-        net['server1'].cmd("nice -n -10 python tcp_core_original.py 10.0.6.2 9999 10000 1 SERVER TCP teste.pcap 1 &") 
-        net['server2'].cmd("nice -n -10 python tcp_core_original.py 10.0.8.2 9999 10000 1 SERVER TCP teste.pcap 1 &") 
+        net['server1'].cmd("nice -n -10 python tcp_core.py 10.0.6.2 9999 10000 1 SERVER TCP teste.pcap 1 &") 
+        net['server2'].cmd("nice -n -10 python tcp_core.py 10.0.8.2 9999 10000 1 SERVER TCP teste.pcap 1 &") 
         
         time.sleep(8)
 
-        print net['server1'].cmd("nice -n -10 ./background_sbd_original.py 'SERVER' 10.0.5.2 9999 1 2 1 3000 &") 
-        print net['server2'].cmd("nice -n -10 ./background_sbd_original.py 'SERVER' 10.0.7.2 9980 2 2 1 3000 &") 
+        print net['server1'].cmd("nice -n -10 ./background_sbd.py 'SERVER' 10.0.5.2 9999 1 2 1 3000 &") 
+        print net['server2'].cmd("nice -n -10 ./background_sbd.py 'SERVER' 10.0.7.2 9980 2 2 1 3000 &") 
 
-        print net['client1'].cmd("nice -n -10 python tcp_core_original.py 10.0.6.2 9999 10000 1 CLIENT TCP testec.pcap 1 &") 
-        print net['client2'].cmd("nice -n -10 python tcp_core_original.py 10.0.8.2 9999 10000 1 CLIENT TCP testec.pcap 1 &") 
+        print net['client1'].cmd("nice -n -10 python tcp_core.py 10.0.6.2 9999 10000 1 CLIENT TCP testec.pcap 1 &") 
+        print net['client2'].cmd("nice -n -10 python tcp_core.py 10.0.8.2 9999 10000 1 CLIENT TCP testec.pcap 1 &") 
     
 
         
