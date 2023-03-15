@@ -1,4 +1,4 @@
-# An implementation of the RFC8382 Standard for Detecting Bottleneck Sharing in the MPQUIC Protocol
+# MPQUIC-SBD: An implementation of RFC8382 for Shared Bottleneck Detection (SBD) in Multipath QUIC (MPQUIC)
 
 This repository contains the sources of research work regarding Multipath-QUIC SBD.
 [Multipath-QUIC from Q. Deconinck et al.](https://github.com/qdeconinck/mp-quic) is a Golang implementation of Multipath-QUIC.
