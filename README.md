@@ -123,15 +123,15 @@ python AStream/dist/client/bulk_transfer.py -m <SERVER URL TO MPD> -q -mp
 In this project we run the experiment with three scenarios built in mininet, which can be seen in the directory network/mininet/.
 
 We implemented three mininet topologies (Fig. x[REF]), where a multihomed client (AStream DASH player) is linked with two access networks and, at the other end-systems, a single-homed video server (Caddy) is linked with an access network. Between client and server, we have the following scenarios:
-    - **Scenario 1**: NSB (non-shared bottlenecks) - client and server seperated from two  links, i..
-    - **Scenario 2**: SB (shared bottleneck) - ...
-    - **Scenario 3**: SHIFT (shifting SB NSB) - it combines SB and NSB scenarios into a single network topology.
+ - **Scenario 1**: NSB (non-shared bottlenecks) - client and server seperated from two  links, i..
+ - **Scenario 2**: SB (shared bottleneck) - ...
+ - **Scenario 3**: SHIFT (shifting SB NSB) - it combines SB and NSB scenarios into a single network topology.
 
 ```
 # Run mininet experiment.
 sudo python network/mininet/build_mininet_router<scenario_of_experiment>.py -nm 2 -p 'basic'
 ```
-- **number_of_experiment**: there are three experiments for three different scenarios (1, 2 or 3)
+ - **number_of_experiment**: there are three experiments for three different scenarios (1, 2 or 3)
  - **-nm**: is the client interface number, default 2;
  - **-p**: is the DASH algorithm to be executed, which can have three values (basic, netflix or sara);
 
