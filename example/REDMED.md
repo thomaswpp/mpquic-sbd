@@ -3,8 +3,8 @@
 This folder contains example files and code for creating segments and representing mpd
 
 Version:
-  -- **MP4Box - GPAC version 2.0-rev2.0.0+dfsg1-2**
-  -- **ffmpeg version 4.4.3-0ubuntu1~20.04.sav1**
+  - **MP4Box - GPAC version 2.0-rev2.0.0+dfsg1-2**
+  - **ffmpeg version 4.4.3-0ubuntu1~20.04.sav1**
 
 
 ## Quickstart
