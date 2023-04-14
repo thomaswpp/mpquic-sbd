@@ -16,7 +16,7 @@ AStream was also extended by using MP-QUIC as transport layer protocol.
 
 All source code is targeted to run on Ubuntu 64-bit machines.
 
-## Structure of this repository
+## 1. Structure of this repository
 
 Open source adaptations:
 * [src/quic-go](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/quic-go) contains extended MP-QUIC implementation written in Golang.
@@ -36,13 +36,30 @@ Creating a Linux shared object (.so) allows bridging Go code into a Python modul
 Example video setup:
 * [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example) contains a DASH-streamable video and a corresponding sample Caddyserver configuration file. 
 
-# Preliminary guidelines
+## 2. Preliminary guidelines
 
 To run the MPQUIC-SBD, you have two choices:
 
 (1) To reproduce easily our experimental setup and measurements in [1], we provide a VM ready to run the experiments. Such a VM is a KVM (Kernel-based Virtual Machine)(https://www.linux-kvm.org) with Ubuntu 14.04 LTS inside, in which we extended from the default MPQUIC implementation (https://github.com/qdeconinck/mp-quic), i.e.,  all the source code files, scripts, and tools are installed and ready to run from that VM. 
 
 (2) You can create your own experimental environment, and then download and install this software artefact.
+
+### 2.1 Quickstart from our prepared VM 
+
+To reproduce the experiments, the basic guidelines are: 
+
+Prepare a Linux host. For ease install, we suggest a user-friendly Linux such as Ubuntu. For instance, we installed Ubuntu 20.04.5 LTS in our host, which is consisted of a server node HP Proliant ML30 Gen9, Intel Xeon 4-Core 3~{GHz}, 8~{GB} RAM, 1~{TB} hard disk.
+
+Install KVM package on your Linux host. Instructions are available at (https://www.linux-kvm.org).
+
+Install the Virtual Manager Machine (virt-manager) (https://virt-manager.org/)
+
+To laugh the VM
+```
+sudo virt-manager
+```
+
+
 
 
 ## (1) Quickstart
