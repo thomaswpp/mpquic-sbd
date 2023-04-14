@@ -36,15 +36,15 @@ Creating a Linux shared object (.so) allows bridging Go code into a Python modul
 Example video setup:
 * [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example) contains a DASH-streamable video and a corresponding sample Caddyserver configuration file. 
 
-## 2. Guidelines
+# 2 Guidelines
 
 To run the MPQUIC-SBD, you have two choices:
 
- * (a) To reproduce easily our experimental setup and measurements in [1], we provide a VM ready to run the experiments. Go to Section 2.1 for more instructions.
+ * (a) To reproduce easily our experimental setup and measurements in [1], we provide a VM ready to run the experiments. Go to Section 3 for more instructions.
 
  * (b) You can create your own experimental environment, and then download and install this software artefact. Go to Section XX for more instructions.
 
-### 2.1 Quickstart to reproduce our experiments from a prepared VM 
+# 3 Quickstart to reproduce our experiments from a prepared VM 
 
 The VM is a KVM (Kernel-based Virtual Machine)(https://www.linux-kvm.org) with Ubuntu 14.04 LTS inside, in which we extended from the default MPQUIC implementation (https://github.com/qdeconinck/mp-quic) by implementing the SBD support. All the source code files, scripts, and tools are installed and ready to run from that VM.
 
@@ -61,16 +61,20 @@ To laugh the virt-manager
 sudo virt-manager
 ```
 
-Then, create a new virtual machine. 
- - Choose how you would like to install the operating system. Select the option ‘Local install media (ISO image or CDROM)’, then select from your folder the prepared VM file (QEMU/KVM) you downloaded. 
- - Choose the memory and CPU settings. For our VM, we defined ~7GB RAM and 4 CPUs cores to run the experiments.
- - To begin the installation, give a name to your VM (e.g., ‘mpquic-sbd’), keep the default network configurations (NAT). Then, click on ‘Finish’ button.
+Then, create a new virtual machine: 
+ - 1 Choose how you would like to install the operating system. Select the option ‘Local install media (ISO image or CDROM)’, then select from your folder the prepared VM file (QEMU/KVM) you downloaded. 
+ - 2 Choose the memory and CPU settings. For our VM, we defined ~7GB RAM and 4 CPUs cores to run the experiments.
+ - 3 To begin the installation, give a name to your VM (e.g., ‘mpquic-sbd’), keep the default network configurations (NAT). 
+ - 4 Then, click on ‘Finish’ button.
+
+Once you created the 
 
 
 
 
 
-## (1) Quickstart
+
+# 4 Quickstart
 ```
 # Clone repository and build sources
 git clone https://github.com/deradev/mpquic-sbd
