@@ -48,15 +48,22 @@ To run the MPQUIC-SBD, you have two choices:
 
 The VM is a KVM (Kernel-based Virtual Machine)(https://www.linux-kvm.org) with Ubuntu 14.04 LTS inside, in which we extended from the default MPQUIC implementation (https://github.com/qdeconinck/mp-quic) by implementing the SBD support. All the source code files, scripts, and tools are installed and ready to run from that VM.
 
+## 2.1 Prepare the experimental environment.
+
 To reproduce the experiments and measurements[1], you have to firstly: 
 
  - (1) Prepare a Linux host. For ease install, we suggest a user-friendly Linux such as Ubuntu. For instance, we installed Ubuntu 20.04.5 LTS in our host, which is consisted of a server node HP Proliant ML30 Gen9, Intel Xeon 4-Core 3GHz, 8GB RAM, 1TB hard disk.
+ - (2) Download our prepare VM (QEMU/KVM) from:
+ ```
+ https://drive.google.com/drive/folders/1COAfdMv_j2GQ4GBkPHchOp4hVc78qujs?usp=share_link
+ ```
+ - (3) Install KVM package on your Linux host. Instructions are available at (https://www.linux-kvm.org).
 
- - (2) Install KVM package on your Linux host. Instructions are available at (https://www.linux-kvm.org).
+ - (4) Install the Virtual Manager Machine (`virt-manager`) (https://virt-manager.org/) to launch the VM.
 
- - (3) Install the Virtual Manager Machine (virt-manager) (https://virt-manager.org/) to launch the VM.
+## 2.2 Launch the prepeared VM 
 
-To laugh the VM from virt-manager in your Linux host, open a terminal prompt and type:
+To launch the VM from `virt-manager` in your Linux host, open a terminal prompt and type:
 ```
 $ sudo virt-manager
 ```
@@ -70,14 +77,17 @@ Then, click on 'File' -> 'New Virtual Machine' to create a new VM in your disk:
 
 Once you created your local VM from our QEMU/KVM, then select the VM by clicking on the right-button of your mouse and select the option 'run'. 
 
-When running the VM, to get access in it you will need the following user credentials:
+## 2.3 Login the VM
+
+When running the VM, login with following user credentials:
 
 User: `mininet`
 
 Password: `mininet`
 
+## 2.4 Run our experiments 
 
-To our experimental setup [1]:
+To run our experimental setup [1]:
 
 ```
 $ cd Workspace/mpquic-sbd/
@@ -103,7 +113,7 @@ where:
 To run an experiment for a bulk transfer over MPQUIC-SBD on mininet emulutator, you have to uncomment line 196 in the source code files (available in network/mininet/) for the abovementioned network scenarios (1, 2 or 3).
 
 
-# 4. Deploy MPQUIC-SBD in your experimental environment.
+# 3. Deploy MPQUIC-SBD in your experimental environment.
 
 ## Clone repository and build sources
 ```
