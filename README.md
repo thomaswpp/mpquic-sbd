@@ -50,19 +50,22 @@ The VM is a KVM (Kernel-based Virtual Machine)(https://www.linux-kvm.org) with U
 
 To reproduce the experiments and measurements[1], you have to firstly: 
 
- - 1. Prepare a Linux host. For ease install, we suggest a user-friendly Linux such as Ubuntu. For instance, we installed Ubuntu 20.04.5 LTS in our host, which is consisted of a server node HP Proliant ML30 Gen9, Intel Xeon 4-Core 3GHz, 8GB RAM, 1TB hard disk.
+ - (1) Prepare a Linux host. For ease install, we suggest a user-friendly Linux such as Ubuntu. For instance, we installed Ubuntu 20.04.5 LTS in our host, which is consisted of a server node HP Proliant ML30 Gen9, Intel Xeon 4-Core 3GHz, 8GB RAM, 1TB hard disk.
 
- - 2. Install KVM package on your Linux host. Instructions are available at (https://www.linux-kvm.org).
+ - (2) Install KVM package on your Linux host. Instructions are available at (https://www.linux-kvm.org).
 
- - 3. Install the Virtual Manager Machine (virt-manager) (https://virt-manager.org/) to launch the VM.
-   - 3.1. 
+ - (3) Install the Virtual Manager Machine (virt-manager) (https://virt-manager.org/) to launch the VM.
 
-
-
-To laugh the VM
+To laugh the virt-manager
 ```
 sudo virt-manager
 ```
+
+Then, create a new virtual machine. 
+ - Choose how you would like to install the operating system. Select the option ‘Local install media (ISO image or CDROM)’, then select from your folder the prepared VM file (QEMU/KVM) you downloaded. 
+ - Choose the memory and CPU settings. For our VM, we defined ~7GB RAM and 4 CPUs cores to run the experiments.
+ - To begin the installation, give a name to your VM (e.g., ‘mpquic-sbd’), keep the default network configurations (NAT). Then, click on ‘Finish’ button.
+
 
 
 
