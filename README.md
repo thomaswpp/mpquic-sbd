@@ -40,9 +40,9 @@ Example video setup:
 
 To run the MPQUIC-SBD, you have two choices:
 
- *(a) To reproduce easily our experimental setup and measurements in [1], we provide a VM ready to run the experiments. Go to Section 2.1 for more instructions.
+ * (a) To reproduce easily our experimental setup and measurements in [1], we provide a VM ready to run the experiments. Go to Section 2.1 for more instructions.
 
- *(b) You can create your own experimental environment, and then download and install this software artefact. Go to Section XX for more instructions.
+ * (b) You can create your own experimental environment, and then download and install this software artefact. Go to Section XX for more instructions.
 
 ### 2.1 Quickstart to reproduce our experiments from a prepared VM 
 
@@ -50,12 +50,12 @@ The VM is a KVM (Kernel-based Virtual Machine)(https://www.linux-kvm.org) with U
 
 To reproduce the experiments and measurements[1], you have to firstly: 
 
- - 1. Prepare a Linux host. For ease install, we suggest a user-friendly Linux such as Ubuntu. For instance, we installed Ubuntu 20.04.5 LTS in our host, which is consisted of a server node HP Proliant ML30 Gen9, Intel Xeon 4-Core 3~{GHz}, 8~{GB} RAM, 1~{TB} hard disk.
+ - 1. Prepare a Linux host. For ease install, we suggest a user-friendly Linux such as Ubuntu. For instance, we installed Ubuntu 20.04.5 LTS in our host, which is consisted of a server node HP Proliant ML30 Gen9, Intel Xeon 4-Core 3GHz, 8GB RAM, 1TB hard disk.
 
  - 2. Install KVM package on your Linux host. Instructions are available at (https://www.linux-kvm.org).
 
- - 3. Install the Virtual Manager Machine (virt-manager) (https://virt-manager.org/)
-
+ - 3. Install the Virtual Manager Machine (virt-manager) (https://virt-manager.org/) to launch the VM.
+   - 3.1. 
 
 
 
