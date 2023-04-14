@@ -56,7 +56,7 @@ To reproduce the experiments and measurements[1], you have to firstly:
 
  - (3) Install the Virtual Manager Machine (virt-manager) (https://virt-manager.org/) to launch the VM.
 
-To laugh the virt-manager
+To laugh the virt-manager in your Linux host, open a terminal prompt and type:
 ```
 sudo virt-manager
 ```
