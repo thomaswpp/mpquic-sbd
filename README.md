@@ -37,13 +37,15 @@ Example video setup:
 * [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example) contains a DASH-streamable video and a corresponding sample Caddyserver configuration file. 
 
 # Preliminary guidelines
+
 To run the MPQUIC-SBD, you have two choices:
 
-(1) You can reproduce our experimental setup [1] by downloading our VM ready to run the experiments. Our vm is kvm VM extended from the MPQUIC base implementation (Q. Deconinck et al).
+(1) To reproduce easily our experimental setup and measurements in [1], we provide a VM ready to run the experiments. Such a VM is a KVM (Kernel-based Virtual Machine)(https://www.linux-kvm.org) with Ubuntu 14.04 LTS inside, in which we extended from the default MPQUIC implementation (https://github.com/qdeconinck/mp-quic), i.e.,  all the source code files, scripts, and tools are installed and ready to run from that VM. 
 
 (2) You can create your own experimental environment, and then download and install this software artefact.
 
-## Quickstart
+
+## (1) Quickstart
 ```
 # Clone repository and build sources
 git clone https://github.com/deradev/mpquic-sbd
