@@ -56,20 +56,52 @@ To reproduce the experiments and measurements[1], you have to firstly:
 
  - (3) Install the Virtual Manager Machine (virt-manager) (https://virt-manager.org/) to launch the VM.
 
-To laugh the virt-manager in your Linux host, open a terminal prompt and type:
+To laugh the VM from virt-manager in your Linux host, open a terminal prompt and type:
 ```
-sudo virt-manager
+$ sudo virt-manager
 ```
 
-Then, create a new virtual machine: 
+Then, click on 'File' -> 'New Virtual Machine' to create a new VM in your disk: 
  - 1 Choose how you would like to install the operating system. Select the option ‘Local install media (ISO image or CDROM)’, then select from your folder the prepared VM file (QEMU/KVM) you downloaded. 
- - 2 Choose the memory and CPU settings. For our VM, we defined ~7GB RAM and 4 CPUs cores to run the experiments.
- - 3 To begin the installation, give a name to your VM (e.g., ‘mpquic-sbd’), keep the default network configurations (NAT). 
- - 4 Then, click on ‘Finish’ button.
+ - 2 Chosse the operating you are installing in textbox by selection 'Generic default'.
+ - 3 Choose the memory and CPU settings. For our VM, we defined ~7GB RAM and 4 CPUs cores to run the experiments.
+ - 4 To begin the installation, give a name to your VM (e.g., ‘mpquic-sbd’), keep the default network configurations (NAT). 
+ - 5 Then, click on ‘Finish’ button.
 
-Once you created the 
+Once you created your local VM from our QEMU/KVM, then select the VM by clicking on the right-button of your mouse and select the option 'run'. 
+
+When running the VM, to get access in it you will need the following user credentials:
+
+USER: mininet
+PASSWORD: mininet
 
 
+To our experimental setup [1]:
+
+```
+$ cd Workspace/mpquic-sbd/
+```
+
+As we discuss in[1] (Figure 4), our experiments regards network scenarios where a multihomed client (AStream DASH player) is linked with two access networks and, at the other end-system, a single-homed video server (Caddy HTTP server) is linked with an access network. In other words, we have two MPQUIC subflows for the DASH client to download the video segment files from the HTTP server.
+
+Specifically, we implemented three network scenarios on mininet emulator (source files can be found in network/mininet/). More specifically, between client and server, we have the following experiments where the two MPQUIC subflows can face:
+ - **<1>**: NSB (non-shared bottlenecks) - each MPQUIC subflow flows though distinct bottleneck links, i.e., they do not share network resources.
+ - **<2>**: SB (shared bottleneck) - the two MPQUIC subflow flow through the same bottleneck link, i.e., they share the same network resource.
+ - **<3>**: SHIFT (shifting SB-NSB) - we alternate bottleneck conditions by shifting SB and NSB for each 40 seconds along with the MPQUIC session.
+
+To run the experiments on mininet emulator:
+
+```
+sudo python network/mininet/build_mininet_router<scenario_of_experiment>.py -nm 2 -p '<ABR>'
+```
+where:
+ - **<number_of_experiment>**: is the number of the desired experiment. Type `1` for NSB, `2` for SB, or `3` for SHIFT. 
+ - **-nm**: is the number of client network interface controller. Type always `2`, since the DASH client is dual-homed in our experiments.
+ - **-p**: is the ABR (Adaptive Bit Rate) algorithm to run at the DASH client application (AStream). We have three available ABR algorihtm implementtions: 'basic', which is a throughput-based algorithm (TBA); 'netflix', which is buffer-based algorithm (BBA), or 'sara' which is hybrid TBA/BBA algorithm.
+
+To run the
+
+If you want to change running the experiment with bulk transfer, you will have to uncomment line 196 in the code file of the scenarios (1, 2 or 3);
 
 
 
@@ -160,27 +192,6 @@ python AStream/dist/client/bulk_transfer.py -m <SERVER URL TO MPD> -q
 # Or run caddy with multipath
 python AStream/dist/client/bulk_transfer.py -m <SERVER URL TO MPD> -q -mp
 ```
-
-#### Run this project with mininet
-In this project we run the experiment with three scenarios built in mininet, which can be seen in the directory network/mininet/.
-
-We implemented three mininet topologies (Fig. x[REF]), where a multihomed client (AStream DASH player) is linked with two access networks and, at the other end-systems, a single-homed video server (Caddy) is linked with an access network. Between client and server, we have the following scenarios:
- - **Scenario 1**: NSB (non-shared bottlenecks) - client and server seperated from two  links, i..
- - **Scenario 2**: SB (shared bottleneck) - ...
- - **Scenario 3**: SHIFT (shifting SB NSB) - it combines SB and NSB scenarios into a single network topology.
-
-```
-# Run mininet experiment.
-sudo python network/mininet/build_mininet_router<scenario_of_experiment>.py -nm 2 -p 'basic'
-```
- - **number_of_experiment**: there are three experiments for three different scenarios (1, 2 or 3)
- - **-nm**: is the client interface number, default 2;
- - **-p**: is the DASH algorithm to be executed, which can have three values (basic, netflix or sara);
-
-
-
-
-If you want to change running the experiment with bulk transfer, you will have to uncomment line 196 in the code file of the scenarios (1, 2 or 3);
 
 
 ## References
