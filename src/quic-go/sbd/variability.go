@@ -2,7 +2,6 @@ package sbd
 
 import (
     "math"
-    // "fmt"
 )
 
 type VarBase struct {
@@ -15,6 +14,7 @@ type VarEst struct {
     varBaseMT   [M]float64
     numMT       [M]uint64
     insPos      uint64
+    // n           uint64
     VarBase
 }
 
@@ -23,6 +23,7 @@ func (ve * VarEst) initialize() {
     ve.numT     = 0
 }
 
+//gambi
 func (ve * VarEst) SetMean(meanVarEst float64) { ve.varEst = meanVarEst }
 
 func (ve * VarEst) GetVarEst() float64 { return ve.varEst }

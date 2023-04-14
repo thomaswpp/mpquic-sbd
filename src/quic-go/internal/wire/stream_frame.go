@@ -18,7 +18,6 @@ type StreamFrame struct {
 	Offset         		protocol.ByteCount
 	LossCount	   		uint8
 	PathID				protocol.PathID
-	// Losspath			uint16
 
 	TimeStamp 			uint64
 	Data           		[]byte
@@ -69,16 +68,6 @@ func ParseStreamFrame(r *bytes.Reader, version protocol.VersionNumber) (*StreamF
 	}
 	frame.Offset = protocol.ByteCount(offset)
 
-	// // SBD - read timestamp
-	// if timestampLen > 0 {
-	// 	timestamp, err :=  utils.GetByteOrder(version).ReadUintN(r,  timestampLen)
-		
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	frame.TimeStamp = protocol.ByteCount(timestamp)
-	// }
-
 	//SBD read losscount
 	losses, err := r.ReadByte()
 	if err != nil {
@@ -102,16 +91,6 @@ func ParseStreamFrame(r *bytes.Reader, version protocol.VersionNumber) (*StreamF
 	}
 
 	frame.TimeStamp = timestamp
-
-	// losspath, err := utils.GetByteOrder(version).ReadUint16(r)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// byteLoss := uint16(0xFF)//255
-	// frame.LossCount = losspath & byteLoss //the last 8 bits
-	// byteLoss = uint16(0xFF00) //65280
-	// frame.PathID = losspath & byteLoss //the fisrt 8 bits
 
 	var dataLen uint16
 	if frame.DataLenPresent {
@@ -173,13 +152,6 @@ func (f *StreamFrame) Write(b *bytes.Buffer, version protocol.VersionNumber) err
 
 	b.WriteByte(typeByte)
 
-	//SBD changes
-	// typeByteTime := uint8(0x80) // sets the leftmost bit to 1
-	// timestampLen := f.getTimeStampLength()
-	// typeByteTime ^= uint8(timestampLen) 
-	
-	// b.WriteByte(typeByteTime)
-
 	switch streamIDLen {
 	case 1:
 		b.WriteByte(uint8(f.StreamID))
@@ -216,32 +188,9 @@ func (f *StreamFrame) Write(b *bytes.Buffer, version protocol.VersionNumber) err
 	//SBD - write the value of lossCount and PathId in the buffer
 	b.WriteByte(f.LossCount)
 	b.WriteByte(uint8(f.PathID))
-	// utils.GetByteOrder(version).WriteUint16(b, uint16(f.Losspath))
 
 	utils.GetByteOrder(version).WriteUint64(b, uint64(f.TimeStamp))
 
-	// switch timestampLen {
-	// case 0:
-	// case 1:
-	// 	b.WriteByte(uint8(f.TimeStamp))
-	// case 2:
-	// 	utils.GetByteOrder(version).WriteUint16(b, uint16(f.TimeStamp))
-	// case 3:
-	// 	utils.GetByteOrder(version).WriteUint24(b, uint32(f.TimeStamp))
-	// case 4:
-	// 	utils.GetByteOrder(version).WriteUint32(b, uint32(f.TimeStamp))
-	// case 5:
-	// 	utils.GetByteOrder(version).WriteUint40(b, uint64(f.TimeStamp))
-	// case 6:
-	// 	utils.GetByteOrder(version).WriteUint48(b, uint64(f.TimeStamp))
-	// case 7:
-	// 	utils.GetByteOrder(version).WriteUint56(b, uint64(f.TimeStamp))
-	// case 8:
-	// 	utils.GetByteOrder(version).WriteUint64(b, uint64(f.TimeStamp))
-	// default:
-	// 	return errInvalidTimeStampLen
-	// }
-	
 
 	if f.DataLenPresent {
 		utils.GetByteOrder(version).WriteUint16(b, uint16(len(f.Data)))
@@ -263,33 +212,6 @@ func (f *StreamFrame) calculateStreamIDLength() uint8 {
 	return 4
 }
 
-// func (f *StreamFrame) getTimeStampLength() protocol.ByteCount {
-// 	if f.TimeStamp == 0 {
-// 		return 0
-// 	}
-// 	if f.TimeStamp < (1 << 8) {
-// 		return 1
-// 	}
-// 	if f.TimeStamp < (1 << 16) {
-// 		return 2
-// 	}
-// 	if f.TimeStamp < (1 << 24) {
-// 		return 3
-// 	}
-// 	if f.TimeStamp < (1 << 32) {
-// 		return 4
-// 	}
-// 	if f.TimeStamp < (1 << 40) {
-// 		return 5
-// 	}
-// 	if f.TimeStamp < (1 << 48) {
-// 		return 6
-// 	}
-// 	if f.TimeStamp < (1 << 56) {
-// 		return 7
-// 	}
-// 	return 8
-// }
 
 func (f *StreamFrame) getOffsetLength() protocol.ByteCount {
 	if f.Offset == 0 {

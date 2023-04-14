@@ -272,7 +272,6 @@ func (p *packetPacker) composeNextPacket(
 
 	// TODO: Simplify
 	onlyOne := false
-	// ts := uint64(int64(time.Nanosecond) * time.Now().UnixNano() / int64(time.Microsecond))
 	var timeStamp TimeStamp
 	timeStamp.Setup()
 	encodeTs := timeStamp.EncodeADE(timeStamp.TimeStamp())	
@@ -283,9 +282,6 @@ func (p *packetPacker) composeNextPacket(
 		if f.LossCount == 0 && !onlyOne {
 			f.LossCount = uint8(sntLost - pth.lastSentLossCount)
 			f.PathID = pth.pathID
-			// losspath := uint16(f.PathID)
-			// f.Losspath = (losspath << 8) | uint16(f.LossCount)
-			// fmt.Println(f.PathID, f.LossCount, f.Losspath)
 			pth.lastSentLossCount = sntLost 
 			onlyOne = true
 		}		

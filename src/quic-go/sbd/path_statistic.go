@@ -1,17 +1,6 @@
 package sbd
 
 
-import (
-
-  "encoding/csv"
-  "os"
-  "strconv"
-  "time"
-
-  "github.com/lucas-clemente/quic-go/internal/protocol"
-)
-
-
 const (
     N                           uint64  = 50
     M                           uint64  = 50
@@ -46,6 +35,7 @@ func NewPathStats(skewness SkewEst, variance VarEst, loss PacketLoss, freq FreqE
     PB:           false,
 	}
 }
+
 
 func (pstats * PathStats) ComputeStatisticsBase(relativeOwd float64, firstTInterval uint64) {
       
@@ -85,6 +75,6 @@ func (pstats * PathStats) ComputeStatistics(firstTInterval uint64) {
         pstats.Variance.computeVarEst()
         pstats.Freq.computeFreqEst(pstats.MeanOwd, pstats.MeanDelay, pstats.Variance)
       }
-             
+        
       pstats.Loss.computePacketLoss()
 }

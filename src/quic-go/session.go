@@ -521,6 +521,7 @@ func (s *session) handlePacketImpl(p *receivedPacket) error {
 		p.rcvTime = time.Now()
 	}
 
+	
 	diff_time := float64(s.timeStart.Sub(p.rcvTime))/float64(time.Millisecond)
 	if diff_time <= 0 {
 		s.numberInterval += 1
@@ -627,14 +628,13 @@ func (s *session) handleFrames(fs []wire.Frame, p *path, rcvTime time.Time ) err
 			s.tsRcv1 = rcvTime
 			s.saveTsRcv1 = false
 		}
-		diffRcv := rcvTime.Sub(s.tsRcv)
-		s.tsRcv = rcvTime
 		owd := float64(ts_rcv - ts_snd) / 1000.0
-		sbdChanStruct <- Sbd{owd, p, lossCount, rcvTime, diffRcv}
+		sbdChanStruct <- Sbd{owd, p, lossCount, rcvTime}
 	}
 
 	return nil
 }
+
 
 // handlePacket is called by the server with a new packet
 func (s *session) handlePacket(p *receivedPacket) {

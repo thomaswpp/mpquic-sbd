@@ -1,15 +1,10 @@
 package quic
 
 import (
-    "fmt"
     "sort"
     "time"
-    "encoding/csv"
-    "strconv"
-    "os"
     "github.com/lucas-clemente/quic-go/internal/protocol"
 )
-
 
 const (
     CONGESTION_THRESHOLD        float64 = 0.1  // c_s
@@ -68,7 +63,8 @@ func (fg *FlowGroups) setup(s *session) {
       }
     }
 
-   fg.statistics = make([]*statistics, 1 + max(fg.pathID))
+
+    fg.statistics = make([]*statistics, 1 + max(fg.pathID))
 
     fg.timeTD = &timeTD{
           td: s.timeStart,
@@ -87,7 +83,6 @@ func (fg *FlowGroups) setup(s *session) {
             loss: 0,
             PB: false,
         }
-
     }
 
     for _, i := range fg.pathID {
@@ -120,17 +115,16 @@ func (fg * FlowGroups) addFlow(pathID protocol.PathID) {
     fg.pathID = append(fg.pathID, pathID)
 }
 
-func (fg * FlowGroups) makeDiffStats(n int) {
+func (fg * FlowGroups) makeStatsArray(n int) {
   fg.statistics = make([]*statistics, n)
 }
-
 
 // SBD GROUPING ALGORITHM -------------------------------------------------------
 
 func (fg *FlowGroups) splitCongestion(congested *FlowGroups, notCongested *FlowGroups){
     var isSharing bool
-    congested.makeDiffStats(1 + max(fg.pathID))
-    notCongested.makeDiffStats(1 + max(fg.pathID))
+    congested.makeStatsArray(1 + max(fg.pathID))
+    notCongested.makeStatsArray(1 + max(fg.pathID))
 
     for _ , k := range fg.pathID {
         isSharing = false
@@ -163,7 +157,7 @@ func (fg *FlowGroups) splitFlows(groups *[]FlowGroups, key string, deltaThresh f
 
     fg.sortFlows(key)
 
-    paths.makeDiffStats(1 + max(fg.pathID))
+    paths.makeStatsArray(1 + max(fg.pathID))
     id := fg.pathID[0]
     paths.addFlow(id)
     paths.statistics[id] = fg.statistics[id]
@@ -175,18 +169,13 @@ func (fg *FlowGroups) splitFlows(groups *[]FlowGroups, key string, deltaThresh f
         switch key {
       	case "freq":
       		  diff = fg.statistics[k_prev].freqest - fg.statistics[k].freqest
-              
       	case "var":
       		  diff = fg.statistics[k_prev].varest - fg.statistics[k].varest
               currThresh = fg.statistics[k_prev].varest * deltaThresh  // 2. relative to first in the CURRENT GROUP (LCN'14)
-              
         case "skew":
               diff = fg.statistics[k_prev].skewness - fg.statistics[k].skewness             
-              
       	default: //loss
               diff =  fg.statistics[k_prev].loss - fg.statistics[k].loss
-              
-              
       	}
 
         belongsLastGroup = false
@@ -208,7 +197,7 @@ func (fg *FlowGroups) splitFlows(groups *[]FlowGroups, key string, deltaThresh f
             cpyPaths := paths
             cpyPaths.pathID = make([]protocol.PathID, len(paths.pathID))
             cpyPaths.statistics = make([]*statistics, len(paths.statistics))
-            copy(cpyPaths.pathID, paths.pathID)
+            copy(cpyPaths.pathID, paths.pathID)            
             copy(cpyPaths.statistics, paths.statistics)
 
             *groups = append(*groups, cpyPaths)
@@ -216,7 +205,6 @@ func (fg *FlowGroups) splitFlows(groups *[]FlowGroups, key string, deltaThresh f
             paths.pathID = paths.pathID[:0]
             paths.addFlow(k)
         }
-        
         paths.statistics[k] = fg.statistics[k]
     }
     //deep copy
@@ -259,23 +247,20 @@ func (fg *FlowGroups) processOwds(groupsSkewness *[][]FlowGroups){
 
     congested.splitFlows(&groupsFreq, "freq", KEYFREQ_DELTA_THRESHOLD, 'a')
 
-    
     for i, _ := range groupsFreq {
         var localGroupsVariance = []FlowGroups{}
         groupsFreq[i].splitFlows(&localGroupsVariance,  "var", VARIANCE_DELTA_THRESHOLD, 'p')
         groupsVar = append(groupsVar, localGroupsVariance)
     }
 
-    
-
     for _, groups := range groupsVar {
         for _, flows := range groups {            
             var localGroupsSkewness = []FlowGroups{}
             flows.splitSkewness(&localGroupsSkewness)
-                *groupsSkewness = append(*groupsSkewness, localGroupsSkewness)
+            *groupsSkewness = append(*groupsSkewness, localGroupsSkewness)
         }
     }
-    
+
 }
 
 func (fg *FlowGroups) sortFlows(key string) {
@@ -333,10 +318,6 @@ func (fg *FlowGroups) FlowGroups(s *session) ([][]FlowGroups) {
     var groupsSkewness = [][]FlowGroups{}
     
     fg.setup(s)
-
-    t := time.Now()
-
-    fg.PrintFileMetrics(t)
 
     fg.processOwds(&groupsSkewness)
 

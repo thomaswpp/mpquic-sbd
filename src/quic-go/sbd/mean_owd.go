@@ -1,5 +1,12 @@
 package sbd
 
+// import (
+// 	"time"
+// )
+
+//conversão de tipos time.Duration
+//https://stackoverflow.com/questions/41503758/conversion-of-time-duration-type-microseconds-value-to-milliseconds
+
 type MeanOWD struct {
 	mean float64
 	n uint64
