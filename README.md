@@ -18,8 +18,10 @@ All source code is targeted to run on Ubuntu 64-bit machines.
 
 # Preliminary guidelines
 To run the MPQUIC-SBD, you have two choices:
-1: You can reproduce our experimental setup [1] by downloading our VM ready to run the experiments. Our vm is kvm VM extended from the MPQUIC base implementation (Q. Deconinck et al).
-2:  You can create your own experimental environment, and then download and install this software artefact.
+
+(1) You can reproduce our experimental setup [1] by downloading our VM ready to run the experiments. Our vm is kvm VM extended from the MPQUIC base implementation (Q. Deconinck et al).
+
+(2) You can create your own experimental environment, and then download and install this software artefact.
 
 ## Structure of this repository
 
