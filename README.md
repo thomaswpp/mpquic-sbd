@@ -89,7 +89,7 @@ Specifically, we implemented three network scenarios on mininet emulator (source
  - **<2>**: SB (shared bottleneck) - the two MPQUIC subflow flow through the same bottleneck link, i.e., they share the same network resource.
  - **<3>**: SHIFT (shifting SB-NSB) - we alternate bottleneck conditions by shifting SB and NSB for each 40 seconds along with the MPQUIC session.
 
-To run the experiments on mininet emulator:
+To run the experiments for video transmission over MPQUIC-SBD on mininet emulator:
 
 ```
 sudo python network/mininet/build_mininet_router<scenario_of_experiment>.py -nm 2 -p '<ABR>'
@@ -97,12 +97,9 @@ sudo python network/mininet/build_mininet_router<scenario_of_experiment>.py -nm 
 where:
  - **<number_of_experiment>**: is the number of the desired experiment. Type `1` for NSB, `2` for SB, or `3` for SHIFT. 
  - **-nm**: is the number of client network interface controller. Type always `2`, since the DASH client is dual-homed in our experiments.
- - **-p**: is the ABR (Adaptive Bit Rate) algorithm to run at the DASH client application (AStream). We have three available ABR algorihtm implementtions: 'basic', which is a throughput-based algorithm (TBA); 'netflix', which is buffer-based algorithm (BBA), or 'sara' which is hybrid TBA/BBA algorithm.
+ - **-p**: is the ABR (Adaptive Bit Rate) algorithm to run at the DASH client application (AStream). We have three available ABR algorihtm implementtions: `'basic'`, which is a throughput-based algorithm (TBA); `'netflix'`, which is buffer-based algorithm (BBA), or `'sara'` which is hybrid TBA/BBA algorithm.
 
-To run the
-
-If you want to change running the experiment with bulk transfer, you will have to uncomment line 196 in the code file of the scenarios (1, 2 or 3);
-
+To run an experiment for a bulk transfer over MPQUIC-SBD on mininet emulutator, you have to uncomment line 196 in the source code files (available in network/mininet/) for the abovementioned network scenarios (1, 2 or 3).
 
 
 
