@@ -36,11 +36,11 @@ Creating a Linux shared object (.so) allows bridging Go code into a Python modul
 Example video setup:
 * [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example) contains a DASH-streamable video and a corresponding sample Caddyserver configuration file. 
 
-## 2. Preliminary guidelines
+## 2. Guidelines
 
 To run the MPQUIC-SBD, you have two choices:
 
-(1) To reproduce easily our experimental setup and measurements in [1], we provide a VM ready to run the experiments.  
+(1) To reproduce easily our experimental setup and measurements in [1], we provide a VM ready to run the experiments. To go to Section 2.1 for instructions.
 
 (2) You can create your own experimental environment, and then download and install this software artefact.
 
