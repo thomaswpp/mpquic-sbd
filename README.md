@@ -42,7 +42,7 @@ To run the MPQUIC-SBD, you have two choices:
 
  * (a) To reproduce easily our experimental setup and measurements in [1], we provide a VM ready to run the experiments. Go to Section 3 for more instructions.
 
- * (b) You can create your own experimental environment, and then download and install this software artefact. Go to Section XX for more instructions.
+ * (b) You can create your own experimental environment, and then download and install this software artefact. Go to Section 4 for more instructions.
 
 # 3 Quickstart to reproduce our experiments from a prepared VM 
 
@@ -103,23 +103,29 @@ where:
 To run an experiment for a bulk transfer over MPQUIC-SBD on mininet emulutator, you have to uncomment line 196 in the source code files (available in network/mininet/) for the abovementioned network scenarios (1, 2 or 3).
 
 
+# 4. Deploy MPQUIC-SBD in your experimental environment.
 
-# 4 Quickstart
+## Clone repository and build sources
 ```
-# Clone repository and build sources
 git clone https://github.com/deradev/mpquic-sbd
 cd mpquic-sbd
 ./build.sh
+```
 
-# Run Caddyserver with sample Caddyfile and Multipath-QUIC
+## Run Caddy server with sample Caddyfile and MPQUIC
+
+```
 ./src/dash/caddy/caddy -conf example/Caddyfile -quic -mp
-# Run AStream client with sample video target and Multipath-QUIC
+```
+
+## Run AStream DASH client with sample video target and MPQUIC
+```
 python src/AStream/dist/client/dash_client.py -m "https://localhost:4242/output_dash.mpd" -p 'basic' -q -mp
 ```
 
 ## Build
 
-The Go code modules are build with Golang version 1.12.
+The Go code modules are build with Golang version 1.12. 
 Here used modules are build *outside* of GOPATH.
 Herefore the local setup redirects their modular dependencies to the local implementations.
 
