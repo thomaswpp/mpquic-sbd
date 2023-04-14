@@ -72,8 +72,9 @@ Once you created your local VM from our QEMU/KVM, then select the VM by clicking
 
 When running the VM, to get access in it you will need the following user credentials:
 
-USER: mininet
-PASSWORD: mininet
+USER: `mininet`
+
+PASSWORD: `mininet`
 
 
 To our experimental setup [1]:
