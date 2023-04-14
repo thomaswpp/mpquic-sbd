@@ -40,9 +40,9 @@ Example video setup:
 
 To run the MPQUIC-SBD, you have two choices:
 
- * (a) To reproduce easily our experimental setup and measurements in [1], we provide a VM ready to run the experiments. Go to Section 2.1 for more instructions.
+ *(a) To reproduce easily our experimental setup and measurements in [1], we provide a VM ready to run the experiments. Go to Section 2.1 for more instructions.
 
- * (b) You can create your own experimental environment, and then download and install this software artefact. Go to Section XX for more instructions.
+ *(b) You can create your own experimental environment, and then download and install this software artefact. Go to Section XX for more instructions.
 
 ### 2.1 Quickstart to reproduce our experiments from a prepared VM 
 
