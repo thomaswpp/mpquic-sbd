@@ -1,25 +1,26 @@
 # MPQUIC-SBD: Multipath QUIC (MPQUIC) with support of Shared Bottleneck Detection (SBD) from the RFC8382 standard
  
-This repository contains the software artefact we used for research purposes in the following publication:
+This repository contains the software artefacts we implemented for research purposes of the following publication:
 ```
 [1] A First Look at Adaptive Video Streaming over Multipath QUIC with Shared Bottleneck Detection. To appear in Proceedings of The 14th ACM Multimedia Systems Conference (MMSys’23), June 07-10, 2023, BC, Vancouver, Canada.
 ```
 
-To implement the standard RFC8382 SBD in MPQUIC protocol, we extend the [MPQUIC's golang implementation](https://multipath-quic.org/, https://github.com/qdeconinck/mp-quic) from [Q. D. Coninck and O. Bonaventure](https://doi.org/10.1145/3143361.3143370), who in turn extend the [QUIC's golang implementation](https://github.com/lucas-clemente/quic-go). 
+To enable the RFC8382 SBD standard implementation in the MPQUIC protocol, we extend the [MPQUIC's golang implementation](https://multipath-quic.org/, https://github.com/qdeconinck/mp-quic) from [Q. D. Coninck and O. Bonaventure](https://doi.org/10.1145/3143361.3143370), who in turn extend the [QUIC's golang implementation](https://github.com/lucas-clemente/quic-go). 
+
+All source code is targeted to run on Linux Ubuntu 64-bit machines.
+
+
+## 1. This repository
 
 
 [Caddy HTTP server](https://caddyserver.com/) is a open source Http server written in Golang making it easy to integrate MP-QUIC.
 [AStream DASH player emulator](https://github.com/pari685/AStream) serves as open-source DASH client.
 
 
-## 1. This repository
-
-All source code is targeted to run on Linux Ubuntu 64-bit machines.
-
-Open source adaptations:
-* [src/quic-go](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/quic-go) contains the [MPQUIC implementation](https://multipath-quic.org/) written in golang, in which we extend to support SBD.
-* [src/caddy](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/caddy) contains Caddy HTTP server written in golang with integrated MPQUIC.
-* [src/AStream](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/AStream) contains DASH client with interchangeable Transport protocol written in Python 2.7.
+Adaptations from open source code:
+* [src/quic-go](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/quic-go): the [MPQUIC implementation](https://multipath-quic.org/) written in golang, in which we extend to support SBD.
+* [src/caddy](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/caddy): Caddy HTTP server written in golang with integrated MPQUIC.
+* [src/AStream](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/AStream): DASH client with interchangeable Transport protocol written in python.
 * [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example) contains example files and scripts for creating video segments and manifest MPD files.
 
 Review adaptations:
