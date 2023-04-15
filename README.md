@@ -31,7 +31,7 @@ To run MPQUIC-SBD:
 
 The VM image is a KVM ([Kernel-based Virtual Machine](https://www.linux-kvm.org)) with Ubuntu 14.04 LTS inside, in which we have extended from the default [MPQUIC implementation](https://github.com/qdeconinck/mp-quic) to enable the SBD support. All the source code files, scripts, and tools are installed and ready to run from that VM image.
 
-### 3.1 Prepare the experimental environment.
+### 3.1 Prepare the experimental environment
 
 To reproduce the experiments and measurements in [1], you have to firstly: 
 
@@ -150,7 +150,7 @@ $ cp src/dash/client/proxy_module/proxy_module.so src/AStream/dist/client/
 $ cp src/dash/client/proxy_module/conn.py src/AStream/dist/client/
 ```
 
-### 4.3 Prepare Caddy server
+### 4.3 Configure and run the video server
 
 For the DASH streaming, Caddy server needs a configuration to serve the video segments. 
 To this end, a file named [*Caddyfile*](https://caddyserver.com/tutorial/caddyfile) must be configured.
@@ -163,13 +163,10 @@ https://localhost:4242 {
 }
 ```
 
-### 4.4 Run the Caddy server
-
 Run the server from `src/dash/caddy`.
 
 For a single-path server:
 ```
-# Run Caddyserver on single path.
 $ ./caddy -quic
 ```
 
@@ -178,7 +175,7 @@ For a multi-path server:
 $ ./caddy -quic -mp
 ```
  
-### 4.5 Run AStream DASH client
+### 4.4 Run the DASH client
 
 Run the AStream client from `src/AStream`.
 
@@ -192,7 +189,9 @@ For a multi-path client:
 python AStream/dist/client/dash_client.py -m <SERVER URL TO MPD> -p 'basic' -q -mp
 ```
 
-### 4.6 Running bulk transfers
+### 4.5 Bulk transfers
+
+If you want to experiment MPQUIC-SBD in bulk transfers, you have to use the script `bulk_transfer.py`.
 
 For a single-path client:
 ```
