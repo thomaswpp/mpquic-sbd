@@ -98,14 +98,49 @@ where:
 To run experiments of bulk transfers (typically, a long-lived session with continuous transmission) over MPQUIC-SBD on mininet emulutator, you have to uncomment line 196 in the source code files (available in network/mininet/) of the above-mentioned network scenarios (1, 2 or 3). Then, run again the command line above.
 
 
+To deploy MPQUIC-SBD for your own, follow instructions of the next section.
+
+
 ## 4. Deploy MPQUIC-SBD in your experimental environment.
 
-### Clone repository and build sources
+### 4.1 Clone and build
+
+To clone our repository and build sources:
 ```
 $ git clone https://github.com/deradev/mpquic-sbd
 $ cd mpquic-sbd
 $ ./build.sh
 ```
+
+### 4.2 Build the applications individually
+
+**If you built all from `./build.sh`, then it is done.**
+Otherwise, if you want to build the applications individually, follow instructions bellow.
+
+The Go modules are implemented from golang version 1.12. 
+Here, the used modules are built *outside* of `GOPATH`.
+The local setup redirects the modular dependencies to the local implementations.
+
+Build MPQUIC:
+```
+$ cd src/quic-go
+$ go build ./...
+```
+Notes: Go modules allow recursive build, this module must not necessarily be build explicitely.
+The MP-QUIC module can be used by other Go modules via reference in their go.mod.
+
+Build Caddy server executable:
+```
+$ cd src/dash/caddy
+$ go build
+```
+
+Build MPQUIC shared object module:
+```
+$ cd src/dash/client/proxy_module
+$ go build -o proxy_module.so -buildmode=c-shared proxy_module.go
+```
+
 
 ### Run Caddy server with sample Caddyfile and MPQUIC
 
@@ -116,32 +151,6 @@ $ ./src/dash/caddy/caddy -conf example/Caddyfile -quic -mp
 ### Run AStream DASH client with sample video target and MPQUIC
 ```
 $ python src/AStream/dist/client/dash_client.py -m "https://localhost:4242/output_dash.mpd" -p 'basic' -q -mp
-```
-
-### Build
-
-The Go code modules are build with Golang version 1.12. 
-Here used modules are build *outside* of GOPATH.
-Herefore the local setup redirects their modular dependencies to the local implementations.
-
-Build MPQUIC:
-```
-$ cd src/quic-go
-$ go build ./...
-```
-Notes: Go modules allow recursive build, this module must not necessarily be build explicitely.
-The MP-QUIC module can be used by other Go modules via reference in their go.mod.
-
-Build Caddyserver executable:
-```
-$ cd src/dash/caddy
-$ go build
-```
-
-Build MPQUIC shared object module:
-```
-$ cd src/dash/client/proxy_module
-$ go build -o proxy_module.so -buildmode=c-shared proxy_module.go
 ```
 
 ### Use
