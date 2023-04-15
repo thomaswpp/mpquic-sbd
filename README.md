@@ -23,7 +23,7 @@ All the source code files are targeted to run on Linux 64-bit hosts.
 
 To run MPQUIC-SBD:
 
- 1. If you want to **reproduce our experimental setup and measurements in [1]**, you should use our VM (QEMU/KVM image) ready to run the experiments. For more instructions go to Section 3.
+ 1. If you want to **reproduce our experimental setup and measurements in [1]**, you should use our VM (QEMU/KVM image) ready to run the experiments. For more instructions, go to Section 3.
 
  2. If you have your own experimental environment, you can download and install the MPQUIC-SBD artefacts by yourself. For more instructions, go to Section 4.
 
