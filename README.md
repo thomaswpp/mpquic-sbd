@@ -86,7 +86,7 @@ Specifically, we implemented three network scenarios on mininet emulator (source
 To run the experiments for video transmission over MPQUIC-SBD on mininet emulator:
 
 ```
-sudo python network/mininet/build_mininet_router<scenario_of_experiment>.py -nm 2 -p '<ABR>'
+$ sudo python network/mininet/build_mininet_router<scenario_of_experiment>.py -nm 2 -p '<ABR>'
 ```
 where:
  - **<number_of_experiment>**: is the number of the desired experiment. Type `1` for NSB, `2` for SB, or `3` for SHIFT. 
