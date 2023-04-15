@@ -44,7 +44,7 @@ To reproduce the experiments and measurements in [1], you have to firstly:
 
  4. Install the Virtual Manager Machine `virt-manager` to launch the VM. Instructions are available at the [virt-manager webpage](https://virt-manager.org/).
 
-### 3.2 Launch the VM 
+### 3.2 Launching the VM 
 
 To launch the VM from `virt-manager` in your Linux host, open a terminal prompt and enter:
 ```
