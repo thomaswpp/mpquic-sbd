@@ -2,7 +2,7 @@
  
 This repository contains open software artefacts we have implemented and joined from other repositories for research purposes of the following publication:
 
-> [1] *A First Look at Adaptive Video Streaming over Multipath QUIC with Shared Bottleneck Detection*. To appear in Proceedings of The 14th ACM Multimedia Systems Conference (MMSys’23), June 07-10, 2023, BC, Vancouver, Canada.
+> **[1] A First Look at Adaptive Video Streaming over Multipath QUIC with Shared Bottleneck Detection. To appear in Proceedings of The 14th ACM Multimedia Systems Conference (MMSys’23), June 07-10, 2023, BC, Vancouver, Canada.**
 
 
 To enable SBD support in MPQUIC protocol, we have implemented the [RFC8382 standard](https://www.rfc-editor.org/rfc/rfc8382.html) in golang into the [MPQUIC implementation](https://multipath-quic.org), which in turn is extended from the [QUIC implementation](https://github.com/lucas-clemente/quic-go). 
@@ -100,9 +100,12 @@ To run experiments of bulk transfers (typically, a long-lived session with conti
 
 ## 3.5 How to verify the experimental results 
 
-> **It is important to notice that AStream is DASH player emulator. So you will not see any video window screen during the experiments. Moreover, the client accomplishes the download of video segments but does not save them in the file system.**
+Note:
+> **It is important to notice that AStream emulates a DASH player. This means that you will not see any video window screen during the experiments. Moreover, the AStream client accomplishes the download of video segments but does not save them in the file system, i.e., upon finishing an experiment, there are no dowloaded video segment files in the client node.
+> You can find the video files in the server node in `dash/video/run/`. **
 
-You can find the video files in `dash/video/run/`.
+
+
 
 
 To deploy MPQUIC-SBD in your experimental environment, follow instructions of the next section.
