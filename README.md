@@ -4,7 +4,10 @@ This repository contains the software artefact we used for research purposes (sc
 
 [1] A First Look at Adaptive Video Streaming over Multipath QUIC with Shared Bottleneck Detection. To appear in Proceedings of The 14th ACM Multimedia Systems Conference (MMSys’23), June 07-10, 2023, BC, Vancouver, Canada.
 
-This repository contains the sources of research work regarding Multipath-QUIC SBD.
+
+## 1. Structure of this repository
+
+This repository contains the source codes of research work regarding Multipath-QUIC SBD.
 [Multipath-QUIC from Q. Deconinck et al.](https://github.com/qdeconinck/mp-quic) is a Golang implementation of Multipath-QUIC.
 It was initially forked from quic-go (https://github.com/lucas-clemente/quic-go).
 Additional scheduler implementations are added in this work.
@@ -16,10 +19,8 @@ AStream was also extended by using MP-QUIC as transport layer protocol.
 
 All source code is targeted to run on Ubuntu 64-bit machines.
 
-## 1. Structure of this repository
-
 Open source adaptations:
-* [src/quic-go](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/quic-go) contains extended MP-QUIC implementation written in Golang.
+* [src/quic-go](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/quic-go) contains the [MPQUIC implementation](https://multipath-quic.org/) written in golang which we extend to support SBD.
 * [src/caddy](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/caddy) contains Caddyserver with integrated MP-QUIC also written in Golang.
 * [src/AStream](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/AStream) contains DASH client with interchangeable Transport protocol written in Python 2.7.
 * [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example) contains example files and code for creating segments and representing mpd video.
