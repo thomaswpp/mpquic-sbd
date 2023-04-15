@@ -8,7 +8,7 @@ This repository contains open software artefacts we have implemented and joined 
 To enable SBD support in MPQUIC protocol, we have implemented the [RFC8382 standard](https://www.rfc-editor.org/rfc/rfc8382.html) in golang into the [MPQUIC implementation](https://multipath-quic.org), which in turn is extended from the [QUIC implementation](https://github.com/lucas-clemente/quic-go). 
 
 
-# 1. This repository
+## 1. This repository
 
 This repository contains the following open-source code: 
 * [src/quic-go](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/quic-go): the popular [MPQUIC implementation](https://multipath-quic.org/) in golang we extend to include SBD.
@@ -19,19 +19,19 @@ This repository contains the following open-source code:
 
 All the source code files are targeted to run on Linux 64-bit hosts.
 
-# 2. Guidelines
+## 2. Guidelines
 
 To run MPQUIC-SBD:
 
- * (1) If you want to **reproduce our experimental setup and measurements in [1]**, you should use our VM (QEMU/KVM image) ready to run the experiments. For more instructions go to Section 3.
+ 1. If you want to **reproduce our experimental setup and measurements in [1]**, you should use our VM (QEMU/KVM image) ready to run the experiments. For more instructions go to Section 3.
 
- * (2) If you have your own experimental environment, you can download and install the MPQUIC-SBD artefacts by yourself. For more instructions, go to Section 4.
+ 2. If you have your own experimental environment, you can download and install the MPQUIC-SBD artefacts by yourself. For more instructions, go to Section 4.
 
-# 3. Quickstart to reproduce the experiments from a prepared VM image
+## 3. Quickstart to reproduce the experiments from a prepared VM image
 
 The VM image is a KVM ([Kernel-based Virtual Machine]](https://www.linux-kvm.org)) with Ubuntu 14.04 LTS inside, in which we have extended from the default [MPQUIC implementation](https://github.com/qdeconinck/mp-quic) to enable the SBD support. All the source code files, scripts, and tools are installed and ready to run from that VM image.
 
-## 3.1 Prepare the experimental environment.
+### 3.1 Prepare the experimental environment.
 
 To reproduce the experiments and measurements in [1], you have to firstly: 
 
@@ -44,7 +44,7 @@ To reproduce the experiments and measurements in [1], you have to firstly:
 
  4. Install the Virtual Manager Machine (`virt-manager`) (https://virt-manager.org/) to launch the VM.
 
-## 3.2 Launch the VM 
+### 3.2 Launch the VM 
 
 To launch the VM from `virt-manager` in your Linux host, open a terminal prompt and enter:
 ```
@@ -52,15 +52,15 @@ $ sudo virt-manager
 ```
 
 Then, click on 'File' -> 'New Virtual Machine' to create a new VM in your disk: 
- - (1) Choose how you would like to install the operating system. Choose the option ‘Local install media (ISO image or CDROM)’, then select from your folder the prepared VM image file (QEMU/KVM) you downloaded. 
- - (2) Choose the operating you are installing by entering/selecting in the textbox 'Generic default'.
- - (3) Choose the memory and CPU settings. For instance, we defined ~7GB RAM and 4 CPUs cores for the VM to run the experiments.
- - (4) To begin the installation, give a name to your VM (e.g., ‘mpquic-sbd’), keep the default network configurations (NAT). 
- - (5) Then, click on ‘Finish’ button.
+ 1. Choose how you would like to install the operating system. Choose the option ‘Local install media (ISO image or CDROM)’, then select from your folder the prepared VM image file (QEMU/KVM) you downloaded. 
+ 2. Choose the operating you are installing by entering/selecting in the textbox 'Generic default'.
+ 3. Choose the memory and CPU settings. For instance, we defined ~7GB RAM and 4 CPUs cores for the VM to run the experiments.
+ 4. To begin the installation, give a name to your VM (e.g., ‘mpquic-sbd’), keep the default network configurations (NAT). 
+ 5. Then, click on ‘Finish’ button.
 
 Once you created your VM from our QEMU/KVM image, then click on the right-button on your mouse over the VM and select the option 'run'. 
 
-## 3.3 Login the VM
+### 3.3 Login the VM
 
 Login the VM with following user credentials:
 
@@ -68,7 +68,7 @@ User: `mininet`
 
 Password: `mininet`
 
-## 3.4 Run our experiments 
+### 3.4 Run our experiments 
 
 To run our experimental setup in [1]:
 
@@ -98,27 +98,27 @@ where:
 To run experiments of bulk transfers (typically, a long-lived session with continuous transmission) over MPQUIC-SBD on mininet emulutator, you have to uncomment line 196 in the source code files (available in network/mininet/) of the above-mentioned network scenarios (1, 2 or 3). Then, run again the command line above.
 
 
-# 3. Deploy MPQUIC-SBD in your experimental environment.
+## 4. Deploy MPQUIC-SBD in your experimental environment.
 
-## Clone repository and build sources
+### Clone repository and build sources
 ```
 git clone https://github.com/deradev/mpquic-sbd
 cd mpquic-sbd
 ./build.sh
 ```
 
-## Run Caddy server with sample Caddyfile and MPQUIC
+### Run Caddy server with sample Caddyfile and MPQUIC
 
 ```
 ./src/dash/caddy/caddy -conf example/Caddyfile -quic -mp
 ```
 
-## Run AStream DASH client with sample video target and MPQUIC
+### Run AStream DASH client with sample video target and MPQUIC
 ```
 python src/AStream/dist/client/dash_client.py -m "https://localhost:4242/output_dash.mpd" -p 'basic' -q -mp
 ```
 
-## Build
+### Build
 
 The Go code modules are build with Golang version 1.12. 
 Here used modules are build *outside* of GOPATH.
@@ -144,9 +144,9 @@ cd src/dash/client/proxy_module
 go build -o proxy_module.so -buildmode=c-shared proxy_module.go
 ```
 
-## Use
+### Use
 
-### Prepare AStream DASH client
+#### Prepare AStream DASH client
 After building the proxy module, copy AStream dependencies.
 (Probably also requires path change in line 5 of src/dash/client/proxy_module/conn.py)
 ```
