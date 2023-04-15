@@ -98,7 +98,7 @@ where:
 To run experiments of bulk transfers (typically, a long-lived session with continuous transmission) over MPQUIC-SBD on mininet emulutator, you have to uncomment line 196 in the source code files (available in network/mininet/) of the above-mentioned network scenarios (1, 2 or 3). Then, run again the command line above.
 
 
-To deploy MPQUIC-SBD for your own, follow instructions of the next section.
+To deploy MPQUIC-SBD in your experimental environment, follow instructions of the next section.
 
 
 ## 4. Deploy MPQUIC-SBD in your experimental environment
