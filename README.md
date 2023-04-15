@@ -101,7 +101,7 @@ To run experiments of bulk transfers (typically, a long-lived session with conti
 To deploy MPQUIC-SBD for your own, follow instructions of the next section.
 
 
-## 4. Deploy MPQUIC-SBD in your experimental environment.
+## 4. Deploy MPQUIC-SBD in your experimental environment
 
 ### 4.1 Clone and build
 
