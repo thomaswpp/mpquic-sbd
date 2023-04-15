@@ -181,12 +181,17 @@ Run the AStream client from `src/AStream`.
 
 For a single-path client:
 ```
-python AStream/dist/client/dash_client.py -m <SERVER URL TO MPD> -p 'basic' -q
+$ python AStream/dist/client/dash_client.py -m <SERVER URL TO MPD> -p 'basic' -q
 ```
 
 For a multi-path client:
 ```
-python AStream/dist/client/dash_client.py -m <SERVER URL TO MPD> -p 'basic' -q -mp
+$ python AStream/dist/client/dash_client.py -m <SERVER URL TO MPD> -p 'basic' -q -mp
+```
+
+The parameter `<SERVER URL TO MPD>` has to be entered in doble quotes like this: 
+```
+$ python AStream/dist/client/dash_client.py -m "https://localhost:4242/output_dash.mpd" -p 'basic' -q -mp
 ```
 
 ### 4.5 Bulk transfers
