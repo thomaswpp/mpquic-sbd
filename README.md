@@ -22,13 +22,13 @@ All the source code files are targeted to run on Linux 64-bit hosts.
 
 To run MPQUIC-SBD:
 
- * (a) If you want to reproduce easily our experimental setup and measurements in [1], we can use our VM ready to run the experiments. Go to Section 3 for more instructions.
+ * 1 If you want to reproduce easily our experimental setup and measurements [1], you can use our VM ready to run the experiments. For more instructions go to Section 3 .
 
- * (b) If you have your own experimental environment, you can download and install our MPQUIC-SBD artefacts. Go to Section 4 for more instructions.
+ * 2 If you have your own experimental environment, you can download and install our MPQUIC-SBD artefacts. For more instructions, go to Section 4.
 
 # 3 Quickstart from a prepared VM 
 
-The VM is a KVM (Kernel-based Virtual Machine)(https://www.linux-kvm.org) with Ubuntu 14.04 LTS inside, in which we extended from the default MPQUIC implementation (https://github.com/qdeconinck/mp-quic) by implementing the SBD support. All the source code files, scripts, and tools are installed and ready to run from that VM.
+The VM is a KVM ([Kernel-based Virtual Machine]])(https://www.linux-kvm.org) with Ubuntu 14.04 LTS inside, in which we extended from the default MPQUIC implementation (https://github.com/qdeconinck/mp-quic) by implementing the SBD support. All the source code files, scripts, and tools are installed and ready to run from that VM.
 
 ## 2.1 Prepare the experimental environment.
 
