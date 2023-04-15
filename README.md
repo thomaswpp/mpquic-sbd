@@ -9,13 +9,16 @@ To enable SBD support in MPQUIC protocol, we have implemented the [RFC8382 stand
 
 ## 1. This repository
 
-This repository contains adaptations from another open source codes:
+This repository contains adaptations from other open-source codes:
 * [src/quic-go](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/quic-go): the popular [MPQUIC implementation](https://multipath-quic.org/) in golang we extend to support SBD (the RFC8382 Standard for Shared Bottleneck Detection).
 * [src/caddy](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/caddy): the [Caddy HTTP server implementation](https://caddyserver.com/) in golang.
-* [src/AStream](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/AStream): A [DASH player]{https://github.com/pari685/AStream} emulator in python. 
-* [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example): example files and scripts to process video segments and manifest MPD files.
+* [src/AStream](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/AStream): a [DASH player](https://github.com/pari685/AStream) emulator in python. 
+* [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example): files and scripts to process the video segments and manifest MPD files.
+* [src/dash/client/proxy_module](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/client/proxy_module) is a Python module that allows to issue http requests via local MP-QUIC.
+Creating a Linux shared object (.so) allows bridging Go code into a Python module.
 
-The source code file are targeted to run on Linux 64-bit hosts.
+
+All the source code file are targeted to run on Linux 64-bit hosts.
 
 Review adaptations:
 The original repositories have not been integrated as recursive git modules but were copied instead.
@@ -25,8 +28,7 @@ Review changes by navigating into the corresponding subfolder and using **git di
 
 Original implementations:
 * [src/dash/caddy](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/dash/caddy) is used to build a Caddyserver executable with local MP-QUIC. 
-* [src/dash/client/proxy_module](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/client/proxy_module) is a Python module that allows to issue http requests via local MP-QUIC.
-Creating a Linux shared object (.so) allows bridging Go code into a Python module.
+
 
 Example video setup:
 * [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example) contains a DASH-streamable video and a corresponding sample Caddyserver configuration file. 
