@@ -18,7 +18,7 @@ This repository contains adaptations of the follwoing open-source codes:
 
 All the source code files are targeted to run on Linux 64-bit hosts.
 
-# 2 Guidelines
+# 2. Guidelines
 
 To run MPQUIC-SBD:
 
