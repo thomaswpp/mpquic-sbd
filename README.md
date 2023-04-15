@@ -9,20 +9,18 @@ To enable SBD support in MPQUIC protocol, we have implemented the [RFC8382 stand
 
 ## 1. This repository
 
-This repository contains adaptations from other open-source codes:
+This repository contains adaptations of other open-source codes: 
 * [src/quic-go](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/quic-go): the popular [MPQUIC implementation](https://multipath-quic.org/) in golang we extend to support SBD (the RFC8382 Standard for Shared Bottleneck Detection).
 * [src/caddy](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/caddy): the [Caddy HTTP server implementation](https://caddyserver.com/) in golang.
 * [src/AStream](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/AStream): a [DASH player](https://github.com/pari685/AStream) emulator in python. 
 * [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example): files and scripts to process the video segments and manifest MPD files.
-* [src/dash/client/proxy_module](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/dash/client/proxy_module): a client-side proxy module which provides an interface through a shared object (\code{.so}) to enable MPQUIC implementations (in golang) underneath the AStream DASH player (in python).
+* [src/dash/client/proxy_module](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/dash/client/proxy_module): a client-side proxy module which provides an interface through a shared object (`.so`) to enable MPQUIC implementations (in golang) underneath the AStream DASH player (in python).
 
 All the source code file are targeted to run on Linux 64-bit hosts.
 
-Review adaptations:
-The original repositories have not been integrated as recursive git modules but were copied instead.
-Review changes by navigating into the corresponding subfolder and using **git diff**.
-
-
+#Review adaptations:
+#The original repositories have not been integrated as recursive git modules but were copied instead.
+#Review changes by navigating into the corresponding subfolder and using **git diff**.
 
 Original implementations:
 * [src/dash/caddy](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/dash/caddy) is used to build a Caddyserver executable with local MP-QUIC. 
