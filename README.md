@@ -95,9 +95,14 @@ where:
  - **`-nm`**: is the number of client network interface controller. Unless you changed the network scenarios, always enter `2`, since the DASH client is dual-homed in our experiments.
 - **`-p`**: is the ABR (Adaptive Bit Rate) algorithm to run on the DASH client application (AStream). We have three available ABR algorithm implementations in AStream: `'basic'`, which is a throughput-based algorithm (TBA); `'netflix'`, which is buffer-based algorithm (BBA), or `'sara'` which is hybrid TBA/BBA algorithm.
 
-**It is important to notice that AStream is DASH player emulator. So you will not see any video window screen during the experiments.**
-
 To run experiments of bulk transfers (typically, a long-lived session with continuous transmission) over MPQUIC-SBD on mininet emulutator, you have to uncomment line 196 in the source code files (available in network/mininet/) of the above-mentioned network scenarios (1, 2 or 3). Then, run again the command line above.
+
+
+## 3.5 How to verify the experimental results 
+
+> **It is important to notice that AStream is DASH player emulator. So you will not see any video window screen during the experiments. Moreover, the client accomplishes the download of video segments but does not save them in the file system.**
+
+You can find the video files in `dash/video/run/`.
 
 
 To deploy MPQUIC-SBD in your experimental environment, follow instructions of the next section.
