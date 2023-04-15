@@ -214,11 +214,11 @@ This repository contains open software artefacts we have joined from other repos
 We are thankful to:
 
 - AStream: a rate adaptation model for DASH. Available at https://github.com/pari685/AStream
-- Caddy Server. Available at (https://caddyserver.com)
-- Multipath QUIC. Available at (https://multipath-quic.org)
+- Caddy Server. Available at https://caddyserver.com
+- Multipath QUIC. Available at https://multipath-quic.org
 - KVM: Kernel-based Virtual Machine). Available at https://www.linux-kvm.org
-- MAppLE: MPQUIC Application Latency Evaluation platform. Available at (https://github.com/vuva/MAppLE)
-- Multipath-QUIC schedulers for video streaming applications. Available at (https://github.com/deradev/mpquicScheduler)
+- MAppLE: MPQUIC Application Latency Evaluation platform. Available at https://github.com/vuva/MAppLE
+- Multipath-QUIC schedulers for video streaming applications. Available at https://github.com/deradev/mpquicScheduler
 
 
 
