@@ -142,9 +142,6 @@ $ cd src/dash/client/proxy_module
 $ go build -o proxy_module.so -buildmode=c-shared proxy_module.go
 ```
 
-### Use
-
-#### Prepare AStream DASH client
 After building the proxy module, copy AStream dependencies.
 (Probably also requires path change in line 5 of src/dash/client/proxy_module/conn.py)
 ```
@@ -153,10 +150,12 @@ $ cp src/dash/client/proxy_module/proxy_module.so src/AStream/dist/client/
 $ cp src/dash/client/proxy_module/conn.py src/AStream/dist/client/
 ```
 
-#### Prepare Caddyserver
-For DASH video streaming Caddyserver needs setup to serve video chunks.
-A file named [*Caddyfile*](https://caddyserver.com/tutorial/caddyfile) must be configured to this end.
-Example Caddyfile:
+### 4.3 Prepare Caddy server
+
+For the DASH streaming, Caddy server needs a configuration to serve the video segments. 
+To this end, a file named [*Caddyfile*](https://caddyserver.com/tutorial/caddyfile) must be configured.
+
+Example of a Caddyfile:
 ```
 https://localhost:4242 {
     root <URL to DASH video files>
@@ -164,7 +163,7 @@ https://localhost:4242 {
 }
 ```
 
-#### Run Caddyserver
+### 4.4 Run the Caddy server
 
 Run the server from `src/dash/caddy`.
 
@@ -179,7 +178,7 @@ For a multi-path server:
 $ ./caddy -quic -mp
 ```
  
-#### Run AStream DASH client
+### 4.5 Run AStream DASH client
 
 Run the AStream client from `src/AStream`.
 
@@ -193,7 +192,7 @@ For a multi-path client:
 python AStream/dist/client/dash_client.py -m <SERVER URL TO MPD> -p 'basic' -q -mp
 ```
 
-#### Bulk Transfer client
+### 4.6 Running bulk transfers
 
 For a single-path client:
 ```
