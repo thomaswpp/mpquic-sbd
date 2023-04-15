@@ -79,9 +79,9 @@ $ cd Workspace/mpquic-sbd/
 As we discuss in [1] (Figure 4 in [1]), our experiments regards network scenarios where a multihomed client (AStream DASH player) is linked with two access networks and, at the other end-system, a single-homed video server (Caddy HTTP server) is linked with an access network. Thus, we have a MPQUIC session of 2 subflows for the DASH client to download the video segment files from the HTTP server.
 
 Specifically, we implemented three network scenarios on mininet emulator (source files can be found in network/mininet/), in which the the paths of 2 MPQUIC subflows between client and server can be of:
- - **<1>**: NSB (non-shared bottlenecks) - each subflow pass through distinct bottleneck links, i.e., they do not share network resources.
- - **<2>**: SB (shared bottleneck) - the 2 MPQUIC subflows flow through the same bottleneck link, i.e., they share the same network resource.
- - **<3>**: SHIFT (shifting SB-NSB) - we alternate the bottlenecks by shifting between SB and NSB for each 40 seconds along with the MPQUIC session.
+ - **`<1>`**: NSB (non-shared bottlenecks) - each subflow pass through distinct bottleneck links, i.e., they do not share network resources.
+ - **`<2>`**: SB (shared bottleneck) - the 2 MPQUIC subflows flow through the same bottleneck link, i.e., they share the same network resource.
+ - **`<3>`**: SHIFT (shifting SB-NSB) - we alternate the bottlenecks by shifting between SB and NSB for each 40 seconds along with the MPQUIC session.
 
 To run the experiments for video transmission over MPQUIC-SBD on mininet emulator:
 
