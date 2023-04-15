@@ -27,11 +27,11 @@ To run MPQUIC-SBD:
 
  * (2) If you have your own experimental environment, you can download and install the MPQUIC-SBD artefacts by yourself. For more instructions, go to Section 4.
 
-# 3 Quickstart to reproduce the experiments from a prepared VM image
+# 3. Quickstart to reproduce the experiments from a prepared VM image
 
 The VM image is a KVM ([Kernel-based Virtual Machine]])(https://www.linux-kvm.org) with Ubuntu 14.04 LTS inside, in which we have extended from the default MPQUIC implementation (https://github.com/qdeconinck/mp-quic) to enable the SBD support. All the source code files, scripts, and tools are installed and ready to run from that VM image.
 
-## 2.1 Prepare the experimental environment.
+## 3.1 Prepare the experimental environment.
 
 To reproduce the experiments and measurements in [1], you have to firstly: 
 
@@ -44,7 +44,7 @@ To reproduce the experiments and measurements in [1], you have to firstly:
 
  - (4) Install the Virtual Manager Machine (`virt-manager`) (https://virt-manager.org/) to launch the VM.
 
-## 2.2 Launch the VM 
+## 3.2 Launch the VM 
 
 To launch the VM from `virt-manager` in your Linux host, open a terminal prompt and enter:
 ```
@@ -60,7 +60,7 @@ Then, click on 'File' -> 'New Virtual Machine' to create a new VM in your disk:
 
 Once you created your VM from our QEMU/KVM image, then click on the right-button on your mouse over the VM and select the option 'run'. 
 
-## 2.3 Login the VM
+## 3.3 Login the VM
 
 Login the VM with following user credentials:
 
@@ -68,7 +68,7 @@ User: `mininet`
 
 Password: `mininet`
 
-## 2.4 Run our experiments 
+## 3.4 Run our experiments 
 
 To run our experimental setup in [1]:
 
