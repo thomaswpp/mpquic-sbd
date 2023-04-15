@@ -196,6 +196,6 @@ python AStream/dist/client/bulk_transfer.py -m <SERVER URL TO MPD> -q -mp
 ## References
 
 This repository contains modified source code versions:
-* [MP-QUIC](https://github.com/qdeconinck/mp-quic)
-* [Caddyserver](https://github.com/caddyserver/caddy)
+* [MPQUIC](https://github.com/qdeconinck/mp-quic)
+* [Caddy Server](https://github.com/caddyserver/caddy)
 * [AStream](https://github.com/pari685/AStream)
