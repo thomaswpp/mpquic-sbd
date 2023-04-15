@@ -55,7 +55,7 @@ Then, click on 'File' -> 'New Virtual Machine' to create a new VM in your disk:
  1. Choose how you would like to install the operating system. Choose the option ‘Local install media (ISO image or CDROM)’, then select from your folder the prepared VM image file (QEMU/KVM) you downloaded. 
  2. Choose the operating you are installing by entering/selecting in the textbox 'Generic default'.
  3. Choose the memory and CPU settings. For instance, we defined ~7GB RAM and 4 CPUs cores for the VM to run the experiments.
- 4. To begin the installation, give a name to your VM (e.g., ‘mpquic-sbd’), keep the default network configurations (NAT). 
+ 4. To begin the installation, give a name to your VM (e.g., 'mpquic-sbd'), keep the default network configurations (NAT). 
  5. Then, click on ‘Finish’ button.
 
 Once you created your VM from our QEMU/KVM image, then click on the right-button on your mouse over the VM and select the option 'run'. 
@@ -192,10 +192,3 @@ python AStream/dist/client/bulk_transfer.py -m <SERVER URL TO MPD> -q
 python AStream/dist/client/bulk_transfer.py -m <SERVER URL TO MPD> -q -mp
 ```
 
-
-## References
-
-This repository contains modified source code versions:
-* [MPQUIC](https://github.com/qdeconinck/mp-quic)
-* [Caddy Server](https://github.com/caddyserver/caddy)
-* [AStream](https://github.com/pari685/AStream)
