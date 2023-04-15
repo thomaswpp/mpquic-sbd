@@ -2,7 +2,7 @@
  
 This repository contains software artefacts we have implemented for research purposes of the publication:
 
- * [1] *A First Look at Adaptive Video Streaming over Multipath QUIC with Shared Bottleneck Detection*. To appear in Proceedings of The 14th ACM Multimedia Systems Conference (MMSys’23), June 07-10, 2023, BC, Vancouver, Canada.
+ [1] - *A First Look at Adaptive Video Streaming over Multipath QUIC with Shared Bottleneck Detection*. To appear in Proceedings of The 14th ACM Multimedia Systems Conference (MMSys’23), June 07-10, 2023, BC, Vancouver, Canada.
 
 To enable SBD support in MPQUIC protocol, we implement the RFC8382 Standard in the most popular [MPQUIC implementation](https://multipath-quic.org) from [Q. D. Coninck and O. Bonaventure](https://doi.org/10.1145/3143361.3143370), who in turn extended the [QUIC's golang implementation](https://github.com/lucas-clemente/quic-go). 
 
