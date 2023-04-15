@@ -20,11 +20,11 @@ All the source code files are targeted to run on Linux 64-bit hosts.
 
 # 2 Guidelines
 
-To run the MPQUIC-SBD, there are two options:
+To run MPQUIC-SBD:
 
- * (a) To reproduce easily our experimental setup and measurements in [1], we provide a VM ready to run the experiments. Go to Section 3 for more instructions.
+ * (a) If you want to reproduce easily our experimental setup and measurements in [1], we can use our VM ready to run the experiments. Go to Section 3 for more instructions.
 
- * (b) You can create your own experimental environment, and then download and install this software artefact. Go to Section 4 for more instructions.
+ * (b) If you have your own experimental environment, you can download and install our MPQUIC-SBD artefacts. Go to Section 4 for more instructions.
 
 # 3 Quickstart from a prepared VM 
 
