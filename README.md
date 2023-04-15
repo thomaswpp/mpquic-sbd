@@ -16,7 +16,7 @@ This repository contains adaptations of the follwoing open-source codes:
 * [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example): files and scripts to process the video segments and manifest MPD files.
 * [src/dash/client/proxy_module](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/dash/client/proxy_module): a client-side proxy module which provides an interface through a shared object (`.so`) to enable MPQUIC implementations (in golang) underneath the AStream DASH player (in python).
 
-All the source code file are targeted to run on Linux 64-bit hosts.
+All the source code files are targeted to run on Linux 64-bit hosts.
 
 # 2 Guidelines
 
