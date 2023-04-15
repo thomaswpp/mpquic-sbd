@@ -1,12 +1,10 @@
 # MPQUIC-SBD: Multipath QUIC with support of the RFC8382 Standard for Shared Bottleneck Detection 
  
-This repository contains software artefacts that we implemented for research purposes of the publication:
+This repository contains software artefacts that we have implemented for research purposes of the publication:
 
  [1] A First Look at Adaptive Video Streaming over Multipath QUIC with Shared Bottleneck Detection. To appear in Proceedings of The 14th ACM Multimedia Systems Conference (MMSys’23), June 07-10, 2023, BC, Vancouver, Canada.
 
-To enable our implementation of the RFC8382 SBD standard in MPQUIC, we extend the [MPQUIC's golang implementation](https://multipath-quic.org) from [Q. D. Coninck and O. Bonaventure](https://doi.org/10.1145/3143361.3143370), who in turn extend the [QUIC's golang implementation](https://github.com/lucas-clemente/quic-go). 
-
-All source code is targeted to run on Linux Ubuntu 64-bit machines.
+To enable our RFC8382 SBD standard implementation in MPQUIC protocol, we extend the most popular [MPQUIC's golang implementation](https://multipath-quic.org) from [Q. D. Coninck and O. Bonaventure](https://doi.org/10.1145/3143361.3143370), who in turn extend the [QUIC's golang implementation](https://github.com/lucas-clemente/quic-go). 
 
 
 ## 1. This repository
@@ -25,6 +23,8 @@ Adaptations from open source code:
 Review adaptations:
 The original repositories have not been integrated as recursive git modules but were copied instead.
 Review changes by navigating into the corresponding subfolder and using **git diff**.
+
+All source code is targeted to run on Linux Ubuntu 64-bit machines.
 
 Original implementations:
 * [src/dash/caddy](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/dash/caddy) is used to build a Caddyserver executable with local MP-QUIC. 
