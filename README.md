@@ -26,7 +26,7 @@ To run the MPQUIC-SBD, there are two options:
 
  * (b) You can create your own experimental environment, and then download and install this software artefact. Go to Section 4 for more instructions.
 
-# 3 Quickstart to reproduce our experiments from a prepared VM 
+# 3 Quickstart from a prepared VM 
 
 The VM is a KVM (Kernel-based Virtual Machine)(https://www.linux-kvm.org) with Ubuntu 14.04 LTS inside, in which we extended from the default MPQUIC implementation (https://github.com/qdeconinck/mp-quic) by implementing the SBD support. All the source code files, scripts, and tools are installed and ready to run from that VM.
 
