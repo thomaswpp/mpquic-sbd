@@ -1,29 +1,27 @@
-# MPQUIC-SBD: Multipath QUIC (MPQUIC) with support of Shared Bottleneck Detection (SBD) 
+# MPQUIC-SBD: Multipath QUIC (MPQUIC) with support of Shared Bottleneck Detection (SBD) from the RFC8382 standard
  
 This repository contains software artefacts we have implemented for research purposes of the publication:
 
 > [1] *A First Look at Adaptive Video Streaming over Multipath QUIC with Shared Bottleneck Detection*. To appear in Proceedings of The 14th ACM Multimedia Systems Conference (MMSys’23), June 07-10, 2023, BC, Vancouver, Canada.
 
-To enable SBD support in MPQUIC protocol, we have implemented in golang the RFC8382 in the most popular [MPQUIC implementation](https://multipath-quic.org), which in turn is extended from the [QUIC implementation](https://github.com/lucas-clemente/quic-go). 
+To enable SBD support in MPQUIC protocol, we have implemented the RFC8382 standard in golang in the popular [MPQUIC implementation](https://multipath-quic.org), which in turn is extended from the [QUIC implementation](https://github.com/lucas-clemente/quic-go). 
 
 
 ## 1. This repository
 
-
-[AStream ](https://github.com/pari685/AStream) serves as open-source DASH client.
-
-
-Adaptations from open source code:
+This repository contains adaptations from another open source codes:
 * [src/quic-go](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/quic-go): the [MPQUIC implementation](https://multipath-quic.org/) in golang we extend to support SBD (the RFC8382 Standard for Shared Bottleneck Detection).
 * [src/caddy](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/caddy): the [Caddy HTTP server implementation](https://caddyserver.com/) in golang.
 * [src/AStream](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/AStream): the [AStream] (https://github.com/pari685/AStream) DASH player emulator in python.
 * [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example): example files and scripts to process video segments and manifest MPD files.
 
+The source code file are targeted to run on Linux 64-bit hosts.
+
 Review adaptations:
 The original repositories have not been integrated as recursive git modules but were copied instead.
 Review changes by navigating into the corresponding subfolder and using **git diff**.
 
-All source code is targeted to run on Linux Ubuntu 64-bit machines.
+
 
 Original implementations:
 * [src/dash/caddy](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/dash/caddy) is used to build a Caddyserver executable with local MP-QUIC. 
