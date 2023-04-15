@@ -86,12 +86,12 @@ Specifically, we implemented three network scenarios on mininet emulator (source
 To run the experiments for video transmission over MPQUIC-SBD on mininet emulator:
 
 ```
-$ sudo python network/mininet/build_mininet_router<scenario_of_experiment>.py -nm 2 -p '<ABR>'
+$ sudo python network/mininet/build_mininet_router<scenario>.py -nm 2 -p '<ABR>'
 ```
 where:
- - **<number_of_experiment>**: is the number of the desired experiment. Type `1` for NSB, `2` for SB, or `3` for SHIFT. 
- - **-nm**: is the number of client network interface controller. Unless you changed the network scenarios, always enter `2`, since the DASH client is dual-homed in our experiments.
-- **-p**: is the ABR (Adaptive Bit Rate) algorithm to run on the DASH client application (AStream). We have three available ABR algorithm implementations in AStream: `'basic'`, which is a throughput-based algorithm (TBA); `'netflix'`, which is buffer-based algorithm (BBA), or `'sara'` which is hybrid TBA/BBA algorithm.
+ - **`<scenario>`**: is the number of the desired experiment. Enter `1` for NSB, `2` for SB, or `3` for SHIFT. 
+ - **`-nm`**: is the number of client network interface controller. Unless you changed the network scenarios, always enter `2`, since the DASH client is dual-homed in our experiments.
+- **`-p`**: is the ABR (Adaptive Bit Rate) algorithm to run on the DASH client application (AStream). We have three available ABR algorithm implementations in AStream: `'basic'`, which is a throughput-based algorithm (TBA); `'netflix'`, which is buffer-based algorithm (BBA), or `'sara'` which is hybrid TBA/BBA algorithm.
 
 **It is important to notice that AStream is DASH player emulator. So you will not see any video window screen during the experiments.**
 
