@@ -8,7 +8,7 @@ This repository contains open software artefacts we have implemented and joined 
 To enable SBD support in MPQUIC protocol, we have implemented the [RFC8382 standard](https://www.rfc-editor.org/rfc/rfc8382.html) in golang into the [MPQUIC implementation](https://multipath-quic.org), which in turn is extended from the [QUIC implementation](https://github.com/lucas-clemente/quic-go). 
 
 
-## 1. This repository
+# 1. This repository
 
 This repository contains the following open-source code: 
 * [src/quic-go](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/quic-go): the popular [MPQUIC implementation](https://multipath-quic.org/) in golang we extend to include SBD.
