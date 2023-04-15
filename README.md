@@ -1,21 +1,20 @@
-# MPQUIC-SBD: An extension of Multipath QUIC (MPQUIC) protocol to support Shared Bottleneck Detection (SBD) from the RFC8382 standard
+# MPQUIC-SBD: Multipath QUIC (MPQUIC) with support of Shared Bottleneck Detection (SBD) from the RFC8382 standard
  
 This repository contains the software artefact we used for research purposes in the following publication:
-
+```
 [1] A First Look at Adaptive Video Streaming over Multipath QUIC with Shared Bottleneck Detection. To appear in Proceedings of The 14th ACM Multimedia Systems Conference (MMSys’23), June 07-10, 2023, BC, Vancouver, Canada.
-
-
-## 1. This repository
+```
 
 To implement the standard RFC8382 SBD in MPQUIC protocol, we extend the [MPQUIC's golang implementation](https://multipath-quic.org/, https://github.com/qdeconinck/mp-quic) from [Q. D. Coninck and O. Bonaventure](https://doi.org/10.1145/3143361.3143370), who in turn extend the [QUIC's golang implementation](https://github.com/lucas-clemente/quic-go). 
 
 
-These schedulers are evaluated in a DASH video streaming scenario:
 [Caddy HTTP server](https://caddyserver.com/) is a open source Http server written in Golang making it easy to integrate MP-QUIC.
 [AStream DASH player emulator](https://github.com/pari685/AStream) serves as open-source DASH client.
 
 
-All source code is targeted to run on Ubuntu 64-bit machines.
+## 1. This repository
+
+All source code is targeted to run on Linux Ubuntu 64-bit machines.
 
 Open source adaptations:
 * [src/quic-go](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/quic-go) contains the [MPQUIC implementation](https://multipath-quic.org/) written in golang, in which we extend to support SBD.
