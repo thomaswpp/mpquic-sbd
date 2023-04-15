@@ -102,20 +102,20 @@ To run experiments of bulk transfers (typically, a long-lived session with conti
 
 ### Clone repository and build sources
 ```
-git clone https://github.com/deradev/mpquic-sbd
-cd mpquic-sbd
-./build.sh
+$ git clone https://github.com/deradev/mpquic-sbd
+$ cd mpquic-sbd
+$ ./build.sh
 ```
 
 ### Run Caddy server with sample Caddyfile and MPQUIC
 
 ```
-./src/dash/caddy/caddy -conf example/Caddyfile -quic -mp
+$ ./src/dash/caddy/caddy -conf example/Caddyfile -quic -mp
 ```
 
 ### Run AStream DASH client with sample video target and MPQUIC
 ```
-python src/AStream/dist/client/dash_client.py -m "https://localhost:4242/output_dash.mpd" -p 'basic' -q -mp
+$ python src/AStream/dist/client/dash_client.py -m "https://localhost:4242/output_dash.mpd" -p 'basic' -q -mp
 ```
 
 ### Build
@@ -124,24 +124,24 @@ The Go code modules are build with Golang version 1.12.
 Here used modules are build *outside* of GOPATH.
 Herefore the local setup redirects their modular dependencies to the local implementations.
 
-Build MP-QUIC:
+Build MPQUIC:
 ```
-cd src/quic-go
-go build ./...
+$ cd src/quic-go
+$ go build ./...
 ```
 Notes: Go modules allow recursive build, this module must not necessarily be build explicitely.
 The MP-QUIC module can be used by other Go modules via reference in their go.mod.
 
 Build Caddyserver executable:
 ```
-cd src/dash/caddy
-go build
+$ cd src/dash/caddy
+$ go build
 ```
 
-Build MP-QUIC shared object module:
+Build MPQUIC shared object module:
 ```
-cd src/dash/client/proxy_module
-go build -o proxy_module.so -buildmode=c-shared proxy_module.go
+$ cd src/dash/client/proxy_module
+$ go build -o proxy_module.so -buildmode=c-shared proxy_module.go
 ```
 
 ### Use
@@ -150,9 +150,9 @@ go build -o proxy_module.so -buildmode=c-shared proxy_module.go
 After building the proxy module, copy AStream dependencies.
 (Probably also requires path change in line 5 of src/dash/client/proxy_module/conn.py)
 ```
-cp src/dash/client/proxy_module/proxy_module.h src/AStream/dist/client/
-cp src/dash/client/proxy_module/proxy_module.so src/AStream/dist/client/
-cp src/dash/client/proxy_module/conn.py src/AStream/dist/client/
+$ cp src/dash/client/proxy_module/proxy_module.h src/AStream/dist/client/
+$ cp src/dash/client/proxy_module/proxy_module.so src/AStream/dist/client/
+$ cp src/dash/client/proxy_module/conn.py src/AStream/dist/client/
 ```
 
 #### Prepare Caddyserver
@@ -167,28 +167,43 @@ https://localhost:4242 {
 ```
 
 #### Run Caddyserver
-Run the created executable from src/dash/caddy:
+
+Run the server from `src/dash/caddy`.
+
+For a single-path server:
 ```
 # Run Caddyserver on single path.
-./caddy -quic
-# Or run caddy with multipath.
-./caddy -quic -mp
+$ ./caddy -quic
+```
+
+For a multi-path server:
+```
+$ ./caddy -quic -mp
 ```
  
 #### Run AStream DASH client
-Run the AStream client from src/AStream:
+
+Run the AStream client from `src/AStream`.
+
+For a single-path client:
 ```
-# Run AStream on single path.
 python AStream/dist/client/dash_client.py -m <SERVER URL TO MPD> -p 'basic' -q
-# Or run caddy with multipath and SBD.
+```
+
+For a multi-path client:
+```
 python AStream/dist/client/dash_client.py -m <SERVER URL TO MPD> -p 'basic' -q -mp
 ```
-#### Run Bulk Transfer client
-```
-# Run on single path.
-python AStream/dist/client/bulk_transfer.py -m <SERVER URL TO MPD> -q
 
-# Or run caddy with multipath
+#### Bulk Transfer client
+
+For a single-path client:
+```
+python AStream/dist/client/bulk_transfer.py -m <SERVER URL TO MPD> -q
+```
+
+For a multi-path client:
+```
 python AStream/dist/client/bulk_transfer.py -m <SERVER URL TO MPD> -q -mp
 ```
 
