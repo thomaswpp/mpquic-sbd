@@ -18,17 +18,6 @@ This repository contains adaptations of other open-source codes:
 
 All the source code file are targeted to run on Linux 64-bit hosts.
 
-#Review adaptations:
-#The original repositories have not been integrated as recursive git modules but were copied instead.
-#Review changes by navigating into the corresponding subfolder and using **git diff**.
-
-Original implementations:
-* [src/dash/caddy](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/dash/caddy) is used to build a Caddyserver executable with local MP-QUIC. 
-
-
-Example video setup:
-* [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example) contains a DASH-streamable video and a corresponding sample Caddyserver configuration file. 
-
 # 2 Guidelines
 
 To run the MPQUIC-SBD, there are two options:
