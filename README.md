@@ -36,7 +36,7 @@ Example video setup:
 
 # 2 Guidelines
 
-To run the MPQUIC-SBD, you have two choices:
+To run the MPQUIC-SBD, there are two options:
 
  * (a) To reproduce easily our experimental setup and measurements in [1], we provide a VM ready to run the experiments. Go to Section 3 for more instructions.
 
