@@ -29,20 +29,20 @@ To run MPQUIC-SBD:
 
 # 3. Quickstart to reproduce the experiments from a prepared VM image
 
-The VM image is a KVM ([Kernel-based Virtual Machine]])(https://www.linux-kvm.org) with Ubuntu 14.04 LTS inside, in which we have extended from the default MPQUIC implementation (https://github.com/qdeconinck/mp-quic) to enable the SBD support. All the source code files, scripts, and tools are installed and ready to run from that VM image.
+The VM image is a KVM ([Kernel-based Virtual Machine]](https://www.linux-kvm.org)) with Ubuntu 14.04 LTS inside, in which we have extended from the default [MPQUIC implementation](https://github.com/qdeconinck/mp-quic) to enable the SBD support. All the source code files, scripts, and tools are installed and ready to run from that VM image.
 
 ## 3.1 Prepare the experimental environment.
 
 To reproduce the experiments and measurements in [1], you have to firstly: 
 
- - (1) Have a Linux host. For ease install, we suggest a user-friendly Linux such as Ubuntu. For instance, we installed Ubuntu 20.04.5 LTS in our host, which is consisted of a server node HP Proliant ML30 Gen9, Intel Xeon 4-Core 3GHz, 8GB RAM, 1TB hard disk.
- - (2) Download our prepare VM (QEMU/KVM) image from:
+ - (a) Have a Linux host. For ease install, we suggest a user-friendly Linux such as Ubuntu. For instance, we installed Ubuntu 20.04.5 LTS in our host, which is consisted of a server node HP Proliant ML30 Gen9, Intel Xeon 4-Core 3GHz, 8GB RAM, 1TB hard disk.
+ - (b) Download our prepare VM (QEMU/KVM) image from:
  ```
  https://drive.google.com/drive/folders/1COAfdMv_j2GQ4GBkPHchOp4hVc78qujs?usp=share_link
  ```
- - (3) Install the KVM package on your Linux host. Instructions are available at (https://www.linux-kvm.org).
+ - (c) Install the KVM package on your Linux host. Instructions are available at (https://www.linux-kvm.org).
 
- - (4) Install the Virtual Manager Machine (`virt-manager`) (https://virt-manager.org/) to launch the VM.
+ - (d) Install the Virtual Manager Machine (`virt-manager`) (https://virt-manager.org/) to launch the VM.
 
 ## 3.2 Launch the VM 
 
@@ -52,11 +52,11 @@ $ sudo virt-manager
 ```
 
 Then, click on 'File' -> 'New Virtual Machine' to create a new VM in your disk: 
- - 1 Choose how you would like to install the operating system. Choose the option ‘Local install media (ISO image or CDROM)’, then select from your folder the prepared VM image file (QEMU/KVM) you downloaded. 
- - 2 Choose the operating you are installing by entering/selecting in the textbox 'Generic default'.
- - 3 Choose the memory and CPU settings. For instance, we defined ~7GB RAM and 4 CPUs cores for the VM to run the experiments.
- - 4 To begin the installation, give a name to your VM (e.g., ‘mpquic-sbd’), keep the default network configurations (NAT). 
- - 5 Then, click on ‘Finish’ button.
+ - 1- Choose how you would like to install the operating system. Choose the option ‘Local install media (ISO image or CDROM)’, then select from your folder the prepared VM image file (QEMU/KVM) you downloaded. 
+ - 2- Choose the operating you are installing by entering/selecting in the textbox 'Generic default'.
+ - 3- Choose the memory and CPU settings. For instance, we defined ~7GB RAM and 4 CPUs cores for the VM to run the experiments.
+ - 4- To begin the installation, give a name to your VM (e.g., ‘mpquic-sbd’), keep the default network configurations (NAT). 
+ - 5- Then, click on ‘Finish’ button.
 
 Once you created your VM from our QEMU/KVM image, then click on the right-button on your mouse over the VM and select the option 'run'. 
 
