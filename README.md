@@ -98,7 +98,7 @@ where:
 To run experiments of bulk transfers (typically, a long-lived session with continuous transmission) over MPQUIC-SBD on mininet emulutator, you have to uncomment line 196 in the source code files (available in network/mininet/) of the above-mentioned network scenarios (1, 2 or 3). Then, run again the command line above.
 
 
-## 3.5 How to verify the experimental results 
+## 3.5 Verify the experimental results 
 
 Note:
 > **It is important to notice that AStream only emulates a DASH video player. It is not a DASH player of production. This means that you will not see any video window screen during the experiments. Moreover, while the AStream request and download the video segments, it does not save them in the file system, i.e., upon finishing an experiment, there are no dowloaded video segment files stored in the AStream's folders at the client node.**
