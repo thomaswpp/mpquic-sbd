@@ -40,9 +40,9 @@ To reproduce the experiments and measurements in [1], you have to firstly:
  ```
  https://drive.google.com/drive/folders/1COAfdMv_j2GQ4GBkPHchOp4hVc78qujs?usp=share_link
  ```
- 3. Install the KVM package on your Linux host. Instructions are available at (https://www.linux-kvm.org).
+ 3. Install the KVM package on your Linux host. Instructions are available at the [KVM webpage](https://www.linux-kvm.org).
 
- 4. Install the Virtual Manager Machine (`virt-manager`) (https://virt-manager.org/) to launch the VM.
+ 4. Install the Virtual Manager Machine `virt-manager` to launch the VM. Instructions are available at the [virt-manager webpage](https://virt-manager.org/).
 
 ### 3.2 Launch the VM 
 
