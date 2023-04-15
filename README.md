@@ -7,7 +7,7 @@ This repository contains software artefacts we have implemented for research pur
 To enable SBD support in MPQUIC protocol, we have implemented the [RFC8382 standard](https://www.rfc-editor.org/rfc/rfc8382.html) in golang for MPQUIC implementation](https://multipath-quic.org), which in turn is extended from the [QUIC implementation](https://github.com/lucas-clemente/quic-go). 
 
 
-## 1. This repository
+## This repository
 
 This repository contains adaptations of the follwoing open-source codes: 
 * [src/quic-go](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/quic-go): the popular [MPQUIC implementation](https://multipath-quic.org/) in golang we extend to support SBD (the RFC8382 Standard for Shared Bottleneck Detection).
