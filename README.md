@@ -107,7 +107,7 @@ To deploy MPQUIC-SBD for your own, follow instructions of the next section.
 
 To clone our repository and build sources:
 ```
-$ git clone https://github.com/deradev/mpquic-sbd
+$ git clone https://github.com/thomaswpp/mpquic-sbd.git
 $ cd mpquic-sbd
 $ ./build.sh
 ```
