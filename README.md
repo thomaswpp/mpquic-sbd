@@ -14,8 +14,7 @@ This repository contains adaptations from other open-source codes:
 * [src/caddy](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/caddy): the [Caddy HTTP server implementation](https://caddyserver.com/) in golang.
 * [src/AStream](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/AStream): a [DASH player](https://github.com/pari685/AStream) emulator in python. 
 * [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example): files and scripts to process the video segments and manifest MPD files.
-* [src/dash/client/proxy_module](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/dash/client/proxy_module) is a Python module that allows to issue http requests via local MP-QUIC.
-Creating a Linux shared object (.so) allows bridging Go code into a Python module.
+* [src/dash/client/proxy_module](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/dash/client/proxy_module): a client-side proxy module which provides an interface through a shared object (\code{.so}) to enable MPQUIC implementations (in golang) underneath the AStream DASH player (in python).
 
 All the source code file are targeted to run on Linux 64-bit hosts.
 
