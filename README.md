@@ -115,42 +115,31 @@ $ ./build.sh
 ### 4.2 Build the applications individually
 
 **If you built all from `./build.sh`, then it is done.**
+
 Otherwise, if you want to build the applications individually, follow instructions bellow.
 
 The Go modules are implemented from golang version 1.12. 
 Here, the used modules are built *outside* of `GOPATH`.
 The local setup redirects the modular dependencies to the local implementations.
 
-Build MPQUIC:
+To build MPQUIC-SBD:
 ```
 $ cd src/quic-go
 $ go build ./...
 ```
-Notes: Go modules allow recursive build, this module must not necessarily be build explicitely.
-The MP-QUIC module can be used by other Go modules via reference in their go.mod.
+The Go modules allow recursive build, so that this module must not necessarily be build explicitely.
+The MPQUIC module can be used by other Go modules via reference in their go.mod.
 
-Build Caddy server executable:
+To build Caddy server:
 ```
 $ cd src/dash/caddy
 $ go build
 ```
 
-Build MPQUIC shared object module:
+To build the client proxy module in a shared object (.so) to enable MPQUIC (in go) to work transparently underneath AStream DASH player (in python):
 ```
 $ cd src/dash/client/proxy_module
 $ go build -o proxy_module.so -buildmode=c-shared proxy_module.go
-```
-
-
-### Run Caddy server with sample Caddyfile and MPQUIC
-
-```
-$ ./src/dash/caddy/caddy -conf example/Caddyfile -quic -mp
-```
-
-### Run AStream DASH client with sample video target and MPQUIC
-```
-$ python src/AStream/dist/client/dash_client.py -m "https://localhost:4242/output_dash.mpd" -p 'basic' -q -mp
 ```
 
 ### Use
