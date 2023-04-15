@@ -12,7 +12,7 @@ To enable SBD support in MPQUIC protocol, we have implemented the RFC8382 standa
 This repository contains adaptations from another open source codes:
 * [src/quic-go](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/quic-go): the [MPQUIC implementation](https://multipath-quic.org/) in golang we extend to support SBD (the RFC8382 Standard for Shared Bottleneck Detection).
 * [src/caddy](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/caddy): the [Caddy HTTP server implementation](https://caddyserver.com/) in golang.
-* [src/AStream](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/AStream): the [AStream] (https://github.com/pari685/AStream) DASH player emulator in python.
+* [src/AStream](https://github.com/thomaswpp/mpquic-sbd/tree/master/src/AStream): A [DASH player]{https://github.com/pari685/AStream} emulator in python. 
 * [example](https://github.com/thomaswpp/mpquic-sbd/tree/master/example): example files and scripts to process video segments and manifest MPD files.
 
 The source code file are targeted to run on Linux 64-bit hosts.
