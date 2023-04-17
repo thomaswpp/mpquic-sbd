@@ -20,7 +20,19 @@ with_background = 1
 number_of_interface_client = 2
 download = False
 playback = 'basic'
-PATH_DIR = "/Workspace/mininet/mpquic-sbd/"
+PATH_DIR = "/Workspace/mpquic/mpquic-sbd/"
+
+USER='thomas'
+
+
+TC_QDISC_RATE = 20
+TC_QDISC_LATENCY = 20
+TC_QDISC_BURST = 2560
+NICE = 'nice -n -10'
+CLIENT = 'CLIENT'
+SERVER = 'SERVER'
+TIMEOUT = 35
+TCP_CORE_MB = 100000
 
 
 TC_QDISC_RATE = 20
@@ -182,24 +194,22 @@ def run():
     print "Testing bandwidth between client and h4"
 
     info( '*** Routing Table on Router:\n' )
-    # print net[ 'r1' ].cmd( 'route' )
-
-    user='mininet'
+    # print net[ 'r1' ].cmd( 'route' )    
     
     #Run experiment
-    print net[ 'server' ].cmd("cd /home/" + user + PATH_DIR)
+    print net[ 'server' ].cmd("cd /home/" + USER + PATH_DIR)
     print net[ 'server' ].cmd("pwd")
-    print net[ 'server' ].cmd("./run.sh")
+    print net[ 'server' ].cmd("./remove_files.sh")
 
-    net[ 'client' ].cmd("cd /home/" + user + PATH_DIR)
-    print net[ 'client' ].cmd("./run.sh")
+    net[ 'client' ].cmd("cd /home/" + USER + PATH_DIR)
+    print net[ 'client' ].cmd("./remove_files.sh")
 
-    net[ 'server' ].cmd("nice -n -10 src/dash/caddy/caddy -conf /home/" + user + "/Caddyfile -quic -mp >> out &")
+    net[ 'server' ].cmd("nice -n -10 src/dash/caddy/caddy -conf /home/" + USER + "/Caddyfile -quic -mp >> out &")
 
 
     for i in range(1,3):
-        net['client{0}'.format(i)].cmd("cd /home/" + user + PATH_DIR) 
-        net['server{0}'.format(i)].cmd("cd /home/" + user + PATH_DIR) 
+        net['client{0}'.format(i)].cmd("cd /home/" + USER + PATH_DIR) 
+        net['server{0}'.format(i)].cmd("cd /home/" + USER + PATH_DIR) 
 
     # tcpdump -i server-eth1
     if with_background == 1:

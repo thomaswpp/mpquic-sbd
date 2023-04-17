@@ -12,19 +12,14 @@ import time
 import subprocess
 import random
 from threading import Thread
-import traceback
-import threading
 
 BUFSIZE = 1024*8
 
 #socket option patch
-TCP_MULTIPATH_DEBUG = 10001	    #/* MPTCP DEBUG on/off */
-TCP_MULTIPATH_ENABLED = 26	    #/* MPTCP DISABLED on/off */
+TCP_MULTIPATH_DEBUG = 10001     #/* MPTCP DEBUG on/off */
+TCP_MULTIPATH_ENABLED = 26      #/* MPTCP DISABLED on/off */
 TCP_MULTIPATH_NDIFFPORTS = 10007       #/* MPTCP NDIFFPORTS */
 TCP_MULTIPATH_PATHMANAGER = 10008      #/* MPTCP PATHMANAGER */
-
-
-
 
 #ss
 def query_ss(epoch, port):
@@ -327,23 +322,19 @@ def recv_from_sockets(sockets, msg_size):
 
 
 #server
-def main(server_addr_list, server_port_start, data, epoch, mode, proto, filename, flows): 
-    
+def main(server_addr_list, server_port_start, data, epoch, mode, proto, filename, flows):  
     filename = filename + '-' + str(epoch)
     msg_size = int(data * 1024 * 1024)
 
     #tcpdump
     trace_file = 'trace-' + mode + '-DL-' + filename
     # dump = begin_tcpdump('any', trace_file)
-    # time.sleep(5)
-
-
+    time.sleep(5)
     try:
         sockets = create_tcp_sockets(mode, proto, server_addr_list, server_port_start, flows, msg_size, filename)
         try:
             if mode == 'SERVER':
                 send_over_sockets(sockets, msg_size, server_port_start, len(server_addr_list) * flows, filename, epoch)
-
             elif mode == 'CLIENT':
                 recv_data = recv_from_sockets(sockets, msg_size)
                 #Write to file
@@ -351,7 +342,7 @@ def main(server_addr_list, server_port_start, data, epoch, mode, proto, filename
                     host, port = conn.getsockname() #faster_plot_script expects local port
                     # log_recv_data_to_file(host, port, goodput, filename)
             print 'DONE'
-            # time.sleep(3) # cool off period before terminating trace
+            time.sleep(3) # cool off period before terminating trace
         finally:
             close_sockets(sockets)
     finally:
@@ -377,10 +368,10 @@ if __name__ == '__main__':
 
      if len(sys.argv) == 9:
           server_addr_list = sys.argv[1].split(',')
-          mode = sys.argv[2]
-          server_port_start = int(sys.argv[3])
-          data = float(sys.argv[4])
-          epoch = int(sys.argv[5])
+          server_port_start = int(sys.argv[2])
+          data = float(sys.argv[3])
+          epoch = int(sys.argv[4])
+          mode = sys.argv[5]
           proto = sys.argv[6]
           filename = sys.argv[7]
           flows = int(sys.argv[8])
@@ -392,6 +383,5 @@ if __name__ == '__main__':
           else:
               main(server_addr_list, server_port_start, data, epoch, mode, proto, filename, flows)
      else:
-          usage()	
-
+          usage()   
 
