@@ -18,10 +18,20 @@ with_background = 1
 number_of_interface_client = 2
 download = False
 playback = 'basic'
-PATH_DIR = "/Workspace/mininet/mpquic-sbd/"
+PATH_DIR = "/Workspace/mpquic/mpquic-sbd/"
+
+USER='thomas'
+
 
 TC_QDISC_RATE = 20
 TC_QDISC_LATENCY = 20
+TC_QDISC_BURST = 2560
+NICE = 'nice -n -10'
+CLIENT = 'CLIENT'
+SERVER = 'SERVER'
+TIMEOUT = 35
+TCP_CORE_MB = 100000
+
 
 
 class LinuxRouter( Node ):
@@ -142,24 +152,22 @@ def run():
 
     print "Testing bandwidth between client and h4"
 
-    info( '*** Routing Table on Router:\n' )
-
-    user='mininet'
+    info( '*** Routing Table on Router:\n' )    
 
     #Run experiment
-    print net[ 'server' ].cmd("cd /home/" + user + PATH_DIR)
+    print net[ 'server' ].cmd("cd /home/" + USER + PATH_DIR)
     print net[ 'server' ].cmd("pwd")
-    print net[ 'server' ].cmd("./run.sh")
+    # print net[ 'server' ].cmd("./remove_files.sh")
 
-    net[ 'client' ].cmd("cd /home/" + user + PATH_DIR)
-    print net[ 'client' ].cmd("./run.sh")
+    net[ 'client' ].cmd("cd /home/" + USER + PATH_DIR)
+    # print net[ 'client' ].cmd("./remove_files.sh")
 
-    net[ 'server' ].cmd("nice -n -10 src/dash/caddy/caddy -conf /home/" + user + "/Caddyfile -quic -mp >> out &")
+    net[ 'server' ].cmd("nice -n -10 src/dash/caddy/caddy -conf /home/" + USER + "/Caddyfile -quic -mp >> out &")
 
     
     for i in range(1,3):
-       net['client{0}'.format(i)].cmd("cd /home/" + user + PATH_DIR) 
-       net['server{0}'.format(i)].cmd("cd /home/" + user + PATH_DIR) 
+       net['client{0}'.format(i)].cmd("cd /home/" + USER + PATH_DIR) 
+       net['server{0}'.format(i)].cmd("cd /home/" + USER + PATH_DIR) 
 
 
     if with_background == 1:
@@ -200,18 +208,6 @@ def run():
 
     end = datetime.now()
     print(divmod((end - start).total_seconds(), 60))
-
-    while True:
-        bg_pid = net['client1'].cmd('pgrep -f "/usr/local/bin/ITGRecv"')
-        bg_pid += net['client1'].cmd('pgrep -f "/usr/local/bin/ITGSend"')
-        bg_pid += net['client1'].cmd('pgrep -f "python tcp_core_original.py"')
-        bg_pid += net['client1'].cmd('pgrep -f "python tcp_core.py"')
-        lpid = [s for s in bg_pid.split('\r\n') if s.isdigit()]
-        print('PID: ', lpid)
-        if len(lpid) != 8:
-            cmd = 'echo "Error! process quantities other diff 8 {0}"'.format(datetime.now())
-            print(net[ 'client1' ].cmd(cmd))
-        time.sleep(10)
 
     CLI( net )
     net.stop()

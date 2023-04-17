@@ -196,10 +196,10 @@ def run():
     #Run experiment
     print(net[ 'server' ].cmd("cd /home/" + USER + PATH_DIR))
     print(net[ 'server' ].cmd("pwd"))
-    print(net[ 'server' ].cmd("./remove_files.sh"))
+    # print(net[ 'server' ].cmd("./remove_files.sh"))
 
     net[ 'client' ].cmd("cd /home/" + USER + PATH_DIR)
-    print(net[ 'client' ].cmd("./remove_files.sh"))
+    # print(net[ 'client' ].cmd("./remove_files.sh"))
 
     net[ 'server' ].cmd("src/dash/caddy/caddy -conf /home/" + USER + "/Caddyfile -quic -mp >> out &")
 

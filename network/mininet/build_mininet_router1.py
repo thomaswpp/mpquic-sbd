@@ -199,10 +199,10 @@ def run():
     #Run experiment
     print net[ 'server' ].cmd("cd /home/" + USER + PATH_DIR)
     print net[ 'server' ].cmd("pwd")
-    print net[ 'server' ].cmd("./remove_files.sh")
+    # print net[ 'server' ].cmd("./remove_files.sh")
 
     net[ 'client' ].cmd("cd /home/" + USER + PATH_DIR)
-    print net[ 'client' ].cmd("./remove_files.sh")
+    # print net[ 'client' ].cmd("./remove_files.sh")
 
     net[ 'server' ].cmd("nice -n -10 src/dash/caddy/caddy -conf /home/" + USER + "/Caddyfile -quic -mp >> out &")
 
@@ -251,17 +251,6 @@ def run():
 
     end = datetime.now()
     print(divmod((end - start).total_seconds(), 60))
-
-    while True:
-        bg_pid = net['client1'].cmd('pgrep -f "/usr/local/bin/ITGRecv"')
-        bg_pid += net['client1'].cmd('pgrep -f "/usr/local/bin/ITGSend"')
-        bg_pid += net['client1'].cmd('pgrep -f "python tcp_core_original.py"')
-        lpid = [s for s in bg_pid.split('\r\n') if s.isdigit()]
-        print('PID: ', lpid)
-        if len(lpid) != 8:
-            cmd = 'echo "Error! process quantities other diff 8 {0}"'.format(datetime.now())
-            print(net[ 'client1' ].cmd(cmd))
-        time.sleep(10)
 
 
     CLI( net )
