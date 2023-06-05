@@ -6,14 +6,15 @@ This repository contains open software artefacts we have implemented and joined 
 
 > **[1] Thomas W. P. Paiva, Simone Ferlin, Anna Brunstrom, Ozgu Alay, and Bruno Y. L. Kimura. A First Look at Adaptive Video Streaming over Multipath QUIC with Shared Bottleneck Detection. To appear in Proceedings of The 14th ACM Multimedia Systems Conference (MMSys’23), June 07-10, 2023, BC, Vancouver, Canada.**
 
-Authors information:
+Authors' information:
 - Thomas W. P. Paiva, Federal University of Sao Paulo, Brazil.
 - Simone Ferlin, Red Hat and Karlstad University, Sweeden.
 - Anna Brunstrom, Karlstad University, Sweeden.
 - Ozgu Alay, University of Oslo, Norway.
 - Bruno Y. L. Kimura, Federal University of Sao Paulo, Brazil.
 
-
+Contact the authors:
+- Bruno Kimura, bruno.kimura@unifesp.br
 
 ## 1. This repository
 
