@@ -14,7 +14,7 @@ Authors' information:
 - Bruno Y. L. Kimura, Federal University of Sao Paulo, Brazil.
 
 Contact the authors:
-- Bruno Kimura, bruno.kimura@unifesp.br
+- Bruno Y. L. Kimura, bruno.kimura@unifesp.br
 
 ## 1. This repository
 
