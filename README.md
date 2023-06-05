@@ -4,7 +4,7 @@ To enable SBD support in MPQUIC protocol, we have implemented the [RFC8382 stand
 
 This repository contains open software artefacts we have implemented and joined with other repositories for research purposes of the following publication: 
 
-> **[1] Thomas W. P. Paiva, Simone Ferlin, Anna Brunstrom, Ozgu Alay, and Bruno Y. L. Kimura. A First Look at Adaptive Video Streaming over Multipath QUIC with Shared Bottleneck Detection. To appear in Proceedings of The 14th ACM Multimedia Systems Conference [https://2023.acmmmsys.org/]((MMSys’23)), June 07-10, 2023, BC, Vancouver, Canada.**
+> **[1] Thomas W. P. Paiva, Simone Ferlin, Anna Brunstrom, Ozgu Alay, and Bruno Y. L. Kimura. A First Look at Adaptive Video Streaming over Multipath QUIC with Shared Bottleneck Detection. To appear in Proceedings of The 14th ACM Multimedia Systems Conference ((MMSys’23)[https://2023.acmmmsys.org/]), June 07-10, 2023, BC, Vancouver, Canada.**
 
 Authors' information:
 - Thomas W. P. Paiva, Federal University of Sao Paulo, Brazil.
