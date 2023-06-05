@@ -1,11 +1,18 @@
 # MPQUIC-SBD: Multipath QUIC (MPQUIC) with support of Shared Bottleneck Detection (SBD)
  
+To enable SBD support in MPQUIC protocol, we have implemented the [RFC8382 standard](https://www.rfc-editor.org/rfc/rfc8382.html) in golang into the [MPQUIC implementation](https://multipath-quic.org), which in turn is extended from the [QUIC implementation](https://github.com/lucas-clemente/quic-go). 
+
 This repository contains open software artefacts we have implemented and joined with other repositories for research purposes of the following publication: 
 
-> **[1] A First Look at Adaptive Video Streaming over Multipath QUIC with Shared Bottleneck Detection. To appear in Proceedings of The 14th ACM Multimedia Systems Conference (MMSys’23), June 07-10, 2023, BC, Vancouver, Canada.**
+> **[1] Thomas W. P. Paiva, Simone Ferlin, Anna Brunstrom, Ozgu Alay, and Bruno Y. L. Kimura. A First Look at Adaptive Video Streaming over Multipath QUIC with Shared Bottleneck Detection. To appear in Proceedings of The 14th ACM Multimedia Systems Conference (MMSys’23), June 07-10, 2023, BC, Vancouver, Canada.**
 
+Authors information:
+- Thomas W. P. Paiva, Federal University of Sao Paulo, Brazil.
+- Simone Ferlin, Red Hat and Karlstad University, Sweeden.
+- Anna Brunstrom, Karlstad University, Sweeden.
+- Ozgu Alay, University of Oslo, Norway.
+- Bruno Y. L. Kimura, Federal University of Sao Paulo, Brazil.
 
-To enable SBD support in MPQUIC protocol, we have implemented the [RFC8382 standard](https://www.rfc-editor.org/rfc/rfc8382.html) in golang into the [MPQUIC implementation](https://multipath-quic.org), which in turn is extended from the [QUIC implementation](https://github.com/lucas-clemente/quic-go). 
 
 
 ## 1. This repository
