@@ -1,6 +1,6 @@
-# Create video for running the experiment
+# Creating video segments to run the experiment
 
-This folder contains example files and code for creating segments and representing mpd
+This folder contains example files and code for creating segments and generating MPD representations.
 
 Version:
   - **MP4Box - GPAC version 2.0-rev2.0.0+dfsg1-2**
@@ -10,15 +10,15 @@ Version:
 ## Quickstart
 
 ```
-#Convert an mp4 video into videos of other formats and sizes using ffmpgeg
-#In this example converting a 4k 60 fps video to a 240 MB 25 fps video
+# Convert an mp4 video into videos of other formats and sizes using ffmpgeg
+# The following command example converts a 4k 60 fps video to a 240 MB 25 fps video
 ffmpeg -y -i 4k60fps.mp4 -c:a aac -ac 2 -ab 128k -c:v libx264 -x264opts 'keyint=96:min-keyint=96:no-scenecut' -b:v 250k -maxrate 500k -bufsize 1000k -s 426x240 -vf scale=426x240 -filter:v fps=25 video_240_25fps.mp4 &
 ```
 
-After converting the videos to the desired formats, we have to segment and create the mpd representation.
+After converting the videos to the desired formats, the next step is to segment them and generate the MPD representation.
 
 ```
-#In this example we are creating videos of 4 second segments along with their representative
+# The following example command generates 4-second video segments along with their representation
 MP4Box -dash 4000 \
 -segment-name 'segment_$RepresentationID$_' \
 -mpd-refresh 4 \
