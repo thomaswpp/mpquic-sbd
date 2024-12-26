@@ -38,10 +38,10 @@ class LinuxRouter( Node ):
     def config( self, **params ):
         super( LinuxRouter, self).config( **params )
         # Enable forwarding on the router
-        self.cmd( 'sysctl net.ipv4.ip_forward=1' )
+        self.cmdPrint( 'sysctl net.ipv4.ip_forward=1' )
 
     def terminate( self ):
-        self.cmd( 'sysctl net.ipv4.ip_forward=0' )
+        self.cmdPrint( 'sysctl net.ipv4.ip_forward=0' )
         super( LinuxRouter, self ).terminate()
 
 
@@ -106,84 +106,84 @@ def run():
     net.start()
 
     #configuration r1
-    net[ 'r1' ].cmd("ifconfig r1-eth2 10.0.5.1/24")
-    net[ 'r1' ].cmd("route add default gw 10.0.0.2")
-    net[ 'r1' ].cmd("tc qdisc add dev r1-eth0 root tbf rate {0}Mbit latency {1}ms burst {2}".format(TC_QDISC_RATE, TC_QDISC_LATENCY, TC_QDISC_BURST))
+    net[ 'r1' ].cmdPrint("ifconfig r1-eth2 10.0.5.1/24")
+    net[ 'r1' ].cmdPrint("route add default gw 10.0.0.2")
+    net[ 'r1' ].cmdPrint("tc qdisc add dev r1-eth0 root tbf rate {0}Mbit latency {1}ms burst {2}".format(TC_QDISC_RATE, TC_QDISC_LATENCY, TC_QDISC_BURST))
     for i in [3, 13]:
-       net[ 'r1' ].cmd("route add -net 10.0.{0}.0 netmask 255.255.255.0 gw 10.0.1.2".format(i))
+       net[ 'r1' ].cmdPrint("route add -net 10.0.{0}.0 netmask 255.255.255.0 gw 10.0.1.2".format(i))
 
 
     #configuration r2
-    net[ 'r2' ].cmd("ifconfig r2-eth2 10.0.6.1/24")
-    net[ 'r2' ].cmd("route add default gw 10.0.0.1")
-    net[ 'r2' ].cmd("ip route add 10.0.2.0/24 via 10.0.0.14 dev r2-eth1")
-    net[ 'r2' ].cmd("tc qdisc add dev r2-eth0 root tbf rate {0}Mbit latency {1}ms burst {2}".format(TC_QDISC_RATE, TC_QDISC_LATENCY, TC_QDISC_BURST))
+    net[ 'r2' ].cmdPrint("ifconfig r2-eth2 10.0.6.1/24")
+    net[ 'r2' ].cmdPrint("route add default gw 10.0.0.1")
+    net[ 'r2' ].cmdPrint("ip route add 10.0.2.0/24 via 10.0.0.14 dev r2-eth1")
+    net[ 'r2' ].cmdPrint("tc qdisc add dev r2-eth0 root tbf rate {0}Mbit latency {1}ms burst {2}".format(TC_QDISC_RATE, TC_QDISC_LATENCY, TC_QDISC_BURST))
     
     #configuration r3
-    net[ 'r3' ].cmd("ifconfig r3-eth2 10.0.7.1/24")
-    net[ 'r3' ].cmd("route add default gw 10.0.0.6")
-    net[ 'r3' ].cmd("tc qdisc add dev r3-eth0 root tbf rate {0}Mbit latency {1}ms burst {2}".format(TC_QDISC_RATE, TC_QDISC_LATENCY, TC_QDISC_BURST))
+    net[ 'r3' ].cmdPrint("ifconfig r3-eth2 10.0.7.1/24")
+    net[ 'r3' ].cmdPrint("route add default gw 10.0.0.6")
+    net[ 'r3' ].cmdPrint("tc qdisc add dev r3-eth0 root tbf rate {0}Mbit latency {1}ms burst {2}".format(TC_QDISC_RATE, TC_QDISC_LATENCY, TC_QDISC_BURST))
     for i in [1, 11, 15]:
-        net[ 'r3' ].cmd("route add -net 10.0.{0}.0 netmask 255.255.255.0 gw 10.0.3.2".format(i))
+        net[ 'r3' ].cmdPrint("route add -net 10.0.{0}.0 netmask 255.255.255.0 gw 10.0.3.2".format(i))
 
 
     #configuration r4
-    net[ 'r4' ].cmd("ifconfig r4-eth2 10.0.8.1/24")
-    net[ 'r4' ].cmd("route add default gw 10.0.0.5")
-    net[ 'r4' ].cmd("ip route add 10.0.2.0/24 via 10.0.0.18 dev r4-eth1")
-    net[ 'r4' ].cmd("tc qdisc add dev r4-eth0 root tbf rate {0}Mbit latency {1}ms burst {2}".format(TC_QDISC_RATE, TC_QDISC_LATENCY, TC_QDISC_BURST)) 
+    net[ 'r4' ].cmdPrint("ifconfig r4-eth2 10.0.8.1/24")
+    net[ 'r4' ].cmdPrint("route add default gw 10.0.0.5")
+    net[ 'r4' ].cmdPrint("ip route add 10.0.2.0/24 via 10.0.0.18 dev r4-eth1")
+    net[ 'r4' ].cmdPrint("tc qdisc add dev r4-eth0 root tbf rate {0}Mbit latency {1}ms burst {2}".format(TC_QDISC_RATE, TC_QDISC_LATENCY, TC_QDISC_BURST)) 
 
     #configuration r5
-    net[ 'r5' ].cmd("route add default gw 10.0.0.10")
+    net[ 'r5' ].cmdPrint("route add default gw 10.0.0.10")
     for i in [1, 11, 15]:
-        net[ 'r5' ].cmd("route add -net 10.0.{0}.0 netmask 255.255.255.0 gw 10.0.0.13".format(i))
+        net[ 'r5' ].cmdPrint("route add -net 10.0.{0}.0 netmask 255.255.255.0 gw 10.0.0.13".format(i))
     for i in [3, 13]:
-        net[ 'r5' ].cmd("route add -net 10.0.{0}.0 netmask 255.255.255.0 gw 10.0.0.17".format(i))
+        net[ 'r5' ].cmdPrint("route add -net 10.0.{0}.0 netmask 255.255.255.0 gw 10.0.0.17".format(i))
     
     #configuration r6
-    net[ 'r6' ].cmd("route add default gw 10.0.0.9")
-    #net[ 'r6' ].cmd("tc qdisc add dev r6-eth0 root tbf rate {0}Mbit latency {1}ms burst {2}".format(TC_QDISC_RATE, TC_QDISC_LATENCY, TC_QDISC_BURST))
+    net[ 'r6' ].cmdPrint("route add default gw 10.0.0.9")
+    #net[ 'r6' ].cmdPrint("tc qdisc add dev r6-eth0 root tbf rate {0}Mbit latency {1}ms burst {2}".format(TC_QDISC_RATE, TC_QDISC_LATENCY, TC_QDISC_BURST))
 
     #configuration h1
     # This creates two different routing tables, that we use based on the source-address.
-    net[ 'client' ].cmd("ip rule add from 10.0.1.2 table 1")
-    net[ 'client' ].cmd("ip rule add from 10.0.3.2 table 2")
+    net[ 'client' ].cmdPrint("ip rule add from 10.0.1.2 table 1")
+    net[ 'client' ].cmdPrint("ip rule add from 10.0.3.2 table 2")
 
     # Configure the two different routing tables
-    net[ 'client' ].cmd("ip route add 10.0.1.0/24 dev client-eth0 scope link table 1")
-    net[ 'client' ].cmd("ip route add default via 10.0.1.1 dev client-eth0 table 1")
+    net[ 'client' ].cmdPrint("ip route add 10.0.1.0/24 dev client-eth0 scope link table 1")
+    net[ 'client' ].cmdPrint("ip route add default via 10.0.1.1 dev client-eth0 table 1")
 
-    net[ 'client' ].cmd("ip route add 10.0.3.0/24 dev client-eth1 scope link table 2")
-    net[ 'client' ].cmd("ip route add default via 10.0.3.1 dev client-eth1 table 2")
+    net[ 'client' ].cmdPrint("ip route add 10.0.3.0/24 dev client-eth1 scope link table 2")
+    net[ 'client' ].cmdPrint("ip route add default via 10.0.3.1 dev client-eth1 table 2")
 
     if number_of_interface_client > 2:
-        net[ 'client' ].cmd("ip rule add from 10.0.11.2 table 3")
-        net[ 'client' ].cmd("ip route add 10.0.11.0/24 dev client-eth2 scope link table 3")
-        net[ 'client' ].cmd("ip route add default via 10.0.11.1 dev client-eth2 table 3")
-        # net[ 'r5' ].cmd("ip route add 10.0.11.0/24 via 10.0.0.10 dev r5-eth0")
+        net[ 'client' ].cmdPrint("ip rule add from 10.0.11.2 table 3")
+        net[ 'client' ].cmdPrint("ip route add 10.0.11.0/24 dev client-eth2 scope link table 3")
+        net[ 'client' ].cmdPrint("ip route add default via 10.0.11.1 dev client-eth2 table 3")
+        # net[ 'r5' ].cmdPrint("ip route add 10.0.11.0/24 via 10.0.0.10 dev r5-eth0")
     if number_of_interface_client > 3:
-        net[ 'client' ].cmd("ip rule add from 10.0.13.2 table 4")
-        net[ 'client' ].cmd("ip route add 10.0.13.0/24 dev client-eth3 scope link table 4")
-        net[ 'client' ].cmd("ip route add default via 10.0.13.1 dev client-eth3 table 4")
-        # net[ 'r5' ].cmd("ip route add 10.0.13.0/24 via 10.0.0.14 dev r5-eth1")
+        net[ 'client' ].cmdPrint("ip rule add from 10.0.13.2 table 4")
+        net[ 'client' ].cmdPrint("ip route add 10.0.13.0/24 dev client-eth3 scope link table 4")
+        net[ 'client' ].cmdPrint("ip route add default via 10.0.13.1 dev client-eth3 table 4")
+        # net[ 'r5' ].cmdPrint("ip route add 10.0.13.0/24 via 10.0.0.14 dev r5-eth1")
     if number_of_interface_client > 4:
-        net[ 'client' ].cmd("ip rule add from 10.0.15.2 table 5")
-        net[ 'client' ].cmd("ip route add 10.0.15.0/24 dev client-eth4 scope link table 5")
-        net[ 'client' ].cmd("ip route add default via 10.0.15.1 dev client-eth4 table 5")
+        net[ 'client' ].cmdPrint("ip rule add from 10.0.15.2 table 5")
+        net[ 'client' ].cmdPrint("ip route add 10.0.15.0/24 dev client-eth4 scope link table 5")
+        net[ 'client' ].cmdPrint("ip route add default via 10.0.15.1 dev client-eth4 table 5")
 
     # default route for the selection process of normal internet-traffic
-    net[ 'client' ].cmd("ip route add default scope global nexthop via 10.0.1.1 dev client-eth0")
+    net[ 'client' ].cmdPrint("ip route add default scope global nexthop via 10.0.1.1 dev client-eth0")
 
     #configuration server
     # This creates two different routing tables, that we use based on the source-address.
-    net[ 'server' ].cmd("ip rule add from 10.0.2.2 table 1")
+    net[ 'server' ].cmdPrint("ip rule add from 10.0.2.2 table 1")
 
     # Configure the two different routing tables
-    net[ 'server' ].cmd("ip route add 10.0.2.0/24 dev server-eth0 scope link table 1")
-    net[ 'server' ].cmd("ip route add default via 10.0.2.1 dev server-eth0 table 1")
+    net[ 'server' ].cmdPrint("ip route add 10.0.2.0/24 dev server-eth0 scope link table 1")
+    net[ 'server' ].cmdPrint("ip route add default via 10.0.2.1 dev server-eth0 table 1")
 
     # default route for the selection process of normal internet-traffic
-    net[ 'server' ].cmd("ip route add default scope global nexthop via 10.0.2.1 dev server-eth0")
+    net[ 'server' ].cmdPrint("ip route add default scope global nexthop via 10.0.2.1 dev server-eth0")
 
     print("Dumping host connections")
     print("Testing network connectivity")
@@ -194,18 +194,18 @@ def run():
     
 
     #Run experiment
-    print(net[ 'server' ].cmd("cd /home/" + USER + PATH_DIR))
-    print(net[ 'server' ].cmd("pwd"))
-    # print(net[ 'server' ].cmd("./remove_files.sh"))
+    print(net[ 'server' ].cmdPrint("cd /home/" + USER + PATH_DIR))
+    print(net[ 'server' ].cmdPrint("pwd"))
+    # print(net[ 'server' ].cmdPrint("./remove_files.sh"))
 
-    net[ 'client' ].cmd("cd /home/" + USER + PATH_DIR)
-    # print(net[ 'client' ].cmd("./remove_files.sh"))
+    net[ 'client' ].cmdPrint("cd /home/" + USER + PATH_DIR)
+    # print(net[ 'client' ].cmdPrint("./remove_files.sh"))
 
-    net[ 'server' ].cmd("src/dash/caddy/caddy -conf /home/" + USER + PATH_DIR + "Caddyfile -quic -mp >> out &")
+    net[ 'server' ].cmdPrint("src/dash/caddy/caddy -conf /home/" + USER + PATH_DIR + "Caddyfile -quic -mp >> out &")
 
     for i in range(1,4):
-        net['client{0}'.format(i)].cmd("cd /home/" + USER + PATH_DIR) 
-        net['server{0}'.format(i)].cmd("cd /home/" + USER + PATH_DIR) 
+        net['client{0}'.format(i)].cmdPrint("cd /home/" + USER + PATH_DIR) 
+        net['server{0}'.format(i)].cmdPrint("cd /home/" + USER + PATH_DIR) 
     
 
     start = datetime.now()
@@ -221,29 +221,29 @@ def run():
     if with_background == 1:
 
 
-        net[ 'r1' ].cmd("tc qdisc del dev r1-eth0 root")
-        net[ 'r2' ].cmd("tc qdisc del dev r2-eth0 root")
-        net[ 'r4' ].cmd("tc qdisc del dev r4-eth0 root")
-        net[ 'r3' ].cmd("tc qdisc del dev r3-eth0 root")
+        net[ 'r1' ].cmdPrint("tc qdisc del dev r1-eth0 root")
+        net[ 'r2' ].cmdPrint("tc qdisc del dev r2-eth0 root")
+        net[ 'r4' ].cmdPrint("tc qdisc del dev r4-eth0 root")
+        net[ 'r3' ].cmdPrint("tc qdisc del dev r3-eth0 root")
                 
 
-        net[ 'r5' ].cmd("tc qdisc add dev r5-eth0 root netem limit 1000 rate {0}Mbit".format(TC_QDISC_RATE))
-        net[ 'r6' ].cmd("tc qdisc add dev r6-eth0 root netem limit 67 delay {0}ms rate {1}Mbit".format(TC_QDISC_LATENCY, TC_QDISC_RATE))
+        net[ 'r5' ].cmdPrint("tc qdisc add dev r5-eth0 root netem limit 1000 rate {0}Mbit".format(TC_QDISC_RATE))
+        net[ 'r6' ].cmdPrint("tc qdisc add dev r6-eth0 root netem limit 67 delay {0}ms rate {1}Mbit".format(TC_QDISC_LATENCY, TC_QDISC_RATE))
 
 
         #Botteneck SBD
-        net['client3'].cmd("{0} ./background_sbd.py '{1}' 10.0.9.2 {2} 2 2 1 {3} {4} &".format(NICE, CLIENT, port_bg1, TIMEOUT, 'itg_bg3'))    
+        net['client3'].cmdPrint("{0} ./background_sbd.py '{1}' 10.0.9.2 {2} 2 2 1 {3} {4} &".format(NICE, CLIENT, port_bg1, TIMEOUT, 'itg_bg3'))    
 
-        net['server3'].cmd("{0} python tcp_core.py 10.0.10.2 {1} {2} {3} 1 TCP teste.pcap 1 &".format(NICE, SERVER, port_tcp_core1, TCP_CORE_MB))             
+        net['server3'].cmdPrint("{0} python tcp_core.py 10.0.10.2 {1} {2} {3} 1 TCP teste.pcap 1 &".format(NICE, SERVER, port_tcp_core1, TCP_CORE_MB))             
 
         time.sleep(2)
 
-        net['client3'].cmd("{0} python tcp_core.py 10.0.10.2 {1} {2} {3} 1 TCP testec.pcap 1 &".format(NICE, CLIENT, port_tcp_core1, TCP_CORE_MB))
+        net['client3'].cmdPrint("{0} python tcp_core.py 10.0.10.2 {1} {2} {3} 1 TCP testec.pcap 1 &".format(NICE, CLIENT, port_tcp_core1, TCP_CORE_MB))
 
-        net['server3'].cmd("{0} ./background_sbd.py '{1}' 10.0.9.2 {2} 2 2 1 {3} {4} &".format(NICE, SERVER, port_bg1, TIMEOUT, 'itg_bg3'))
+        net['server3'].cmdPrint("{0} ./background_sbd.py '{1}' 10.0.9.2 {2} 2 2 1 {3} {4} &".format(NICE, SERVER, port_bg1, TIMEOUT, 'itg_bg3'))
 
         cmd = "echo Start BG SBD - {0} >> {1}".format(datetime.now(), file_out)
-        print(net[ 'client3' ].cmd(cmd))
+        print(net[ 'client3' ].cmdPrint(cmd))
 
         
     time.sleep(10)
@@ -260,7 +260,7 @@ def run():
 
 
     # print(cmd)
-    net[ 'client' ].cmd(cmd)
+    net[ 'client' ].cmdPrint(cmd)
 
     end = datetime.now()
     print(divmod((end - start).total_seconds(), 60))
@@ -273,30 +273,30 @@ def run():
             i += 1
     
             time.sleep(2)
-            bg_pid = net['client1'].cmd('pgrep -f "python tcp_core.py"')
-            bg_pid += net['client1'].cmd('pgrep -f "/usr/local/bin/ITGRecv"') 
-            bg_pid += net['client1'].cmd('pgrep -f "/usr/local/bin/ITGSend"')
+            bg_pid = net['client1'].cmdPrint('pgrep -f "python tcp_core.py"')
+            bg_pid += net['client1'].cmdPrint('pgrep -f "/usr/local/bin/ITGRecv"') 
+            bg_pid += net['client1'].cmdPrint('pgrep -f "/usr/local/bin/ITGSend"')
             lpid = [s for s in bg_pid.split('\r\n') if s.isdigit()]
             print('PID: ', lpid)
             if len(lpid) != 4:
                 cmd = '"echo "Error! process quantities other than 6 {0}"'.format(datetime.now())
-                print(net[ 'client1' ].cmd(cmd))
+                print(net[ 'client1' ].cmdPrint(cmd))
             
 
             time.sleep(40)
 
             #kill
             for pid in lpid:
-                net['client1'].cmd('sudo kill -9 %s ' % pid)
+                net['client1'].cmdPrint('sudo kill -9 %s ' % pid)
 
 
-            net[ 'r1' ].cmd("tc qdisc add dev r1-eth0 root netem limit 1000 rate {0}Mbit".format(TC_QDISC_RATE))
-            net[ 'r2' ].cmd("tc qdisc add dev r2-eth0 root netem limit 67 delay {0}ms rate {1}Mbit".format(TC_QDISC_LATENCY, TC_QDISC_RATE))
-            net[ 'r3' ].cmd("tc qdisc add dev r3-eth0 root netem limit 1000 rate {0}Mbit".format(TC_QDISC_RATE))
-            net[ 'r4' ].cmd("tc qdisc add dev r4-eth0 root netem limit 67 delay {0}ms rate {1}Mbit".format(TC_QDISC_LATENCY, TC_QDISC_RATE))
+            net[ 'r1' ].cmdPrint("tc qdisc add dev r1-eth0 root netem limit 1000 rate {0}Mbit".format(TC_QDISC_RATE))
+            net[ 'r2' ].cmdPrint("tc qdisc add dev r2-eth0 root netem limit 67 delay {0}ms rate {1}Mbit".format(TC_QDISC_LATENCY, TC_QDISC_RATE))
+            net[ 'r3' ].cmdPrint("tc qdisc add dev r3-eth0 root netem limit 1000 rate {0}Mbit".format(TC_QDISC_RATE))
+            net[ 'r4' ].cmdPrint("tc qdisc add dev r4-eth0 root netem limit 67 delay {0}ms rate {1}Mbit".format(TC_QDISC_LATENCY, TC_QDISC_RATE))
 
-            net[ 'r5' ].cmd("tc qdisc del dev r5-eth0 root")
-            net[ 'r6' ].cmd("tc qdisc del dev r6-eth0 root")
+            net[ 'r5' ].cmdPrint("tc qdisc del dev r5-eth0 root")
+            net[ 'r6' ].cmdPrint("tc qdisc del dev r6-eth0 root")
 
             #Botteneck NSBD
 
@@ -305,47 +305,47 @@ def run():
             port_bg1 += 10
             port_bg2 += 10
 
-            net['client1'].cmd("{0} ./background_sbd.py '{1}' 10.0.5.2 {2} 1 1 1 {3} {4} &".format(NICE, CLIENT, port_bg1, TIMEOUT, 'itg_bg1'))
-            net['client2'].cmd("{0} ./background_sbd.py '{1}' 10.0.7.2 {2} 2 2 1 {3} {4} &".format(NICE, CLIENT, port_bg2, TIMEOUT, 'itg_bg2'))
+            net['client1'].cmdPrint("{0} ./background_sbd.py '{1}' 10.0.5.2 {2} 1 1 1 {3} {4} &".format(NICE, CLIENT, port_bg1, TIMEOUT, 'itg_bg1'))
+            net['client2'].cmdPrint("{0} ./background_sbd.py '{1}' 10.0.7.2 {2} 2 2 1 {3} {4} &".format(NICE, CLIENT, port_bg2, TIMEOUT, 'itg_bg2'))
 
-            net['server1'].cmd("{0} python tcp_core.py 10.0.6.2 {1} {2} {3} 1 TCP teste.pcap 1 &".format(NICE, SERVER, port_tcp_core1, TCP_CORE_MB)) 
-            net['server2'].cmd("{0} python tcp_core.py 10.0.8.2 {1} {2} {3} 1 TCP teste.pcap 1 &".format(NICE, SERVER, port_tcp_core2, TCP_CORE_MB)) 
+            net['server1'].cmdPrint("{0} python tcp_core.py 10.0.6.2 {1} {2} {3} 1 TCP teste.pcap 1 &".format(NICE, SERVER, port_tcp_core1, TCP_CORE_MB)) 
+            net['server2'].cmdPrint("{0} python tcp_core.py 10.0.8.2 {1} {2} {3} 1 TCP teste.pcap 1 &".format(NICE, SERVER, port_tcp_core2, TCP_CORE_MB)) 
 
             time.sleep(1)
 
-            net['client1'].cmd("{0} python tcp_core.py 10.0.6.2 {1} {2} {3} 1 TCP testec.pcap 1 &".format(NICE, CLIENT, port_tcp_core1, TCP_CORE_MB)) 
-            net['client2'].cmd("{0} python tcp_core.py 10.0.8.2 {1} {2} {3} 1 TCP testec.pcap 1 &".format(NICE, CLIENT, port_tcp_core2, TCP_CORE_MB)) 
+            net['client1'].cmdPrint("{0} python tcp_core.py 10.0.6.2 {1} {2} {3} 1 TCP testec.pcap 1 &".format(NICE, CLIENT, port_tcp_core1, TCP_CORE_MB)) 
+            net['client2'].cmdPrint("{0} python tcp_core.py 10.0.8.2 {1} {2} {3} 1 TCP testec.pcap 1 &".format(NICE, CLIENT, port_tcp_core2, TCP_CORE_MB)) 
 
-            net['server1'].cmd("{0} ./background_sbd.py '{1}' 10.0.5.2 {2} 1 1 1 {3} {4} &".format(NICE, SERVER, port_bg1, TIMEOUT, 'itg_bg1'))
-            net['server2'].cmd("{0} ./background_sbd.py '{1}' 10.0.7.2 {2} 2 2 1 {3} {4} &".format(NICE, SERVER, port_bg2, TIMEOUT, 'itg_bg2'))
+            net['server1'].cmdPrint("{0} ./background_sbd.py '{1}' 10.0.5.2 {2} 1 1 1 {3} {4} &".format(NICE, SERVER, port_bg1, TIMEOUT, 'itg_bg1'))
+            net['server2'].cmdPrint("{0} ./background_sbd.py '{1}' 10.0.7.2 {2} 2 2 1 {3} {4} &".format(NICE, SERVER, port_bg2, TIMEOUT, 'itg_bg2'))
 
 
             cmd = "echo Start BG NSBD - {0} >> {1}".format(datetime.now(), file_out)
-            print(net[ 'client1' ].cmd(cmd))
+            print(net[ 'client1' ].cmdPrint(cmd))
 
             time.sleep(2)
-            bg_pid = net['client1'].cmd('pgrep -f "python tcp_core.py"')
-            bg_pid += net['client1'].cmd('pgrep -f "/usr/local/bin/ITGRecv"') 
-            bg_pid += net['client1'].cmd('pgrep -f "/usr/local/bin/ITGSend"')
+            bg_pid = net['client1'].cmdPrint('pgrep -f "python tcp_core.py"')
+            bg_pid += net['client1'].cmdPrint('pgrep -f "/usr/local/bin/ITGRecv"') 
+            bg_pid += net['client1'].cmdPrint('pgrep -f "/usr/local/bin/ITGSend"')
             lpid = [s for s in bg_pid.split('\r\n') if s.isdigit()]
             print('PID: ', lpid)
             if len(lpid) != 8:
                 cmd = '"echo "Error! process quantities other than 6 {0}"'.format(datetime.now())
-                print(net[ 'client1' ].cmd(cmd))
+                print(net[ 'client1' ].cmdPrint(cmd))
 
             time.sleep(40)
 
             #kill
             for pid in lpid:
-                net['client1'].cmd('sudo kill -9 %s ' % pid)
+                net['client1'].cmdPrint('sudo kill -9 %s ' % pid)
 
-            net[ 'r1' ].cmd("tc qdisc del dev r1-eth0 root")
-            net[ 'r2' ].cmd("tc qdisc del dev r2-eth0 root")
-            net[ 'r4' ].cmd("tc qdisc del dev r4-eth0 root")
-            net[ 'r3' ].cmd("tc qdisc del dev r3-eth0 root")
+            net[ 'r1' ].cmdPrint("tc qdisc del dev r1-eth0 root")
+            net[ 'r2' ].cmdPrint("tc qdisc del dev r2-eth0 root")
+            net[ 'r4' ].cmdPrint("tc qdisc del dev r4-eth0 root")
+            net[ 'r3' ].cmdPrint("tc qdisc del dev r3-eth0 root")
 
-            net[ 'r5' ].cmd("tc qdisc add dev r5-eth0 root netem limit 1000 rate {0}Mbit".format(TC_QDISC_RATE))
-            net[ 'r6' ].cmd("tc qdisc add dev r6-eth0 root netem limit 67 delay {0}ms rate {1}Mbit".format(TC_QDISC_LATENCY, TC_QDISC_RATE))
+            net[ 'r5' ].cmdPrint("tc qdisc add dev r5-eth0 root netem limit 1000 rate {0}Mbit".format(TC_QDISC_RATE))
+            net[ 'r6' ].cmdPrint("tc qdisc add dev r6-eth0 root netem limit 67 delay {0}ms rate {1}Mbit".format(TC_QDISC_LATENCY, TC_QDISC_RATE))
 
             #Botteneck SBD
 
@@ -354,18 +354,18 @@ def run():
 
 
             #Botteneck SBD
-            net['client3'].cmd("{0} ./background_sbd.py '{1}' 10.0.9.2 {2} 2 2 1 {3} {4} &".format(NICE, CLIENT, port_bg1, TIMEOUT, 'itg_bg3'))    
+            net['client3'].cmdPrint("{0} ./background_sbd.py '{1}' 10.0.9.2 {2} 2 2 1 {3} {4} &".format(NICE, CLIENT, port_bg1, TIMEOUT, 'itg_bg3'))    
 
-            net['server3'].cmd("{0} python tcp_core.py 10.0.10.2 {1} {2} {3} 1 TCP teste.pcap 1 &".format(NICE, SERVER, port_tcp_core1, TCP_CORE_MB))             
+            net['server3'].cmdPrint("{0} python tcp_core.py 10.0.10.2 {1} {2} {3} 1 TCP teste.pcap 1 &".format(NICE, SERVER, port_tcp_core1, TCP_CORE_MB))             
 
             time.sleep(1)
 
-            net['client3'].cmd("{0} python tcp_core.py 10.0.10.2 {1} {2} {3} 1 TCP testec.pcap 1 &".format(NICE, CLIENT, port_tcp_core1, TCP_CORE_MB))
+            net['client3'].cmdPrint("{0} python tcp_core.py 10.0.10.2 {1} {2} {3} 1 TCP testec.pcap 1 &".format(NICE, CLIENT, port_tcp_core1, TCP_CORE_MB))
             
-            net['server3'].cmd("{0} ./background_sbd.py '{1}' 10.0.9.2 {2} 2 2 1 {3} {4} &".format(NICE, SERVER, port_bg1, TIMEOUT, 'itg_bg3'))
+            net['server3'].cmdPrint("{0} ./background_sbd.py '{1}' 10.0.9.2 {2} 2 2 1 {3} {4} &".format(NICE, SERVER, port_bg1, TIMEOUT, 'itg_bg3'))
 
             cmd = "echo Start BG SBD - {0} >> {1}".format(datetime.now(), file_out)
-            print(net[ 'client3' ].cmd(cmd))
+            print(net[ 'client3' ].cmdPrint(cmd))
 
 
     CLI( net )
