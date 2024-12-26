@@ -162,7 +162,7 @@ def run():
     net[ 'client' ].cmd("cd /home/" + USER + PATH_DIR)
     # print net[ 'client' ].cmd("./remove_files.sh")
 
-    net[ 'server' ].cmd("nice -n -10 src/dash/caddy/caddy -conf /home/" + USER + "/Caddyfile -quic -mp >> out &")
+    net[ 'server' ].cmd("nice -n -10 src/dash/caddy/caddy -conf /home/" + USER + PATH_DIR + "/Caddyfile -quic -mp >> out &")
 
     
     for i in range(1,3):
