@@ -40,10 +40,10 @@ class LinuxRouter( Node ):
     def config( self, **params ):
         super( LinuxRouter, self).config( **params )
         # Enable forwarding on the router
-        self.cmd( 'sysctl net.ipv4.ip_forward=1' )
+        self.cmdPrint( 'sysctl net.ipv4.ip_forward=1' )
 
     def terminate( self ):
-        self.cmd( 'sysctl net.ipv4.ip_forward=0' )
+        self.cmdPrint( 'sysctl net.ipv4.ip_forward=0' )
         super( LinuxRouter, self ).terminate()
 
 
@@ -99,52 +99,52 @@ def run():
 
     #configuration r1
     
-    net[ 'r1' ].cmd("route add default gw 10.0.0.2")
-    net[ 'r1' ].cmd("tc qdisc add dev r1-eth0 root netem limit 1000 rate {0}Mbit".format(TC_QDISC_RATE))
+    net[ 'r1' ].cmdPrint("route add default gw 10.0.0.2")
+    net[ 'r1' ].cmdPrint("tc qdisc add dev r1-eth0 root netem limit 1000 rate {0}Mbit".format(TC_QDISC_RATE))
       
 
     #configuration r2
-    net[ 'r2' ].cmd("route add default gw 10.0.0.1")
-    net[ 'r2' ].cmd("tc qdisc add dev r2-eth0 root netem limit 67 delay {0}ms rate {1}Mbit".format(TC_QDISC_LATENCY, TC_QDISC_RATE))
+    net[ 'r2' ].cmdPrint("route add default gw 10.0.0.1")
+    net[ 'r2' ].cmdPrint("tc qdisc add dev r2-eth0 root netem limit 67 delay {0}ms rate {1}Mbit".format(TC_QDISC_LATENCY, TC_QDISC_RATE))
     
 
     #configuration client
     # This creates two different routing tables, that we use based on the source-address.
-    net[ 'client' ].cmd("ip rule add from 10.0.1.2 table 1")
-    net[ 'client' ].cmd("ip rule add from 10.0.3.2 table 2")
+    net[ 'client' ].cmdPrint("ip rule add from 10.0.1.2 table 1")
+    net[ 'client' ].cmdPrint("ip rule add from 10.0.3.2 table 2")
     # Configure the two different routing tables
-    net[ 'client' ].cmd("ip route add 10.0.1.0/24 dev client-eth0 scope link table 1")
-    net[ 'client' ].cmd("ip route add default via 10.0.1.1 dev client-eth0 table 1")
+    net[ 'client' ].cmdPrint("ip route add 10.0.1.0/24 dev client-eth0 scope link table 1")
+    net[ 'client' ].cmdPrint("ip route add default via 10.0.1.1 dev client-eth0 table 1")
 
-    net[ 'client' ].cmd("ip route add 10.0.3.0/24 dev client-eth1 scope link table 2")
-    net[ 'client' ].cmd("ip route add default via 10.0.3.1 dev client-eth1 table 2")
+    net[ 'client' ].cmdPrint("ip route add 10.0.3.0/24 dev client-eth1 scope link table 2")
+    net[ 'client' ].cmdPrint("ip route add default via 10.0.3.1 dev client-eth1 table 2")
        
     if number_of_interface_client > 2:
-        net[ 'client' ].cmd("ip rule add from 10.0.9.2 table 3")
-        net[ 'client' ].cmd("ip route add 10.0.9.0/24 dev client-eth2 scope link table 3")
-        net[ 'client' ].cmd("ip route add default via 10.0.9.1 dev client-eth2 table 3")
+        net[ 'client' ].cmdPrint("ip rule add from 10.0.9.2 table 3")
+        net[ 'client' ].cmdPrint("ip route add 10.0.9.0/24 dev client-eth2 scope link table 3")
+        net[ 'client' ].cmdPrint("ip route add default via 10.0.9.1 dev client-eth2 table 3")
     if number_of_interface_client > 3:
-        net[ 'client' ].cmd("ip rule add from 10.0.11.2 table 4")
-        net[ 'client' ].cmd("ip route add 10.0.11.0/24 dev client-eth3 scope link table 4")
-        net[ 'client' ].cmd("ip route add default via 10.0.11.1 dev client-eth3 table 4")
+        net[ 'client' ].cmdPrint("ip rule add from 10.0.11.2 table 4")
+        net[ 'client' ].cmdPrint("ip route add 10.0.11.0/24 dev client-eth3 scope link table 4")
+        net[ 'client' ].cmdPrint("ip route add default via 10.0.11.1 dev client-eth3 table 4")
     if number_of_interface_client > 4:
-        net[ 'client' ].cmd("ip rule add from 10.0.13.2 table 5")
-        net[ 'client' ].cmd("ip route add 10.0.13.0/24 dev client-eth4 scope link table 5")
-        net[ 'client' ].cmd("ip route add default via 10.0.13.1 dev client-eth4 table 5")
+        net[ 'client' ].cmdPrint("ip rule add from 10.0.13.2 table 5")
+        net[ 'client' ].cmdPrint("ip route add 10.0.13.0/24 dev client-eth4 scope link table 5")
+        net[ 'client' ].cmdPrint("ip route add default via 10.0.13.1 dev client-eth4 table 5")
 
     # default route for the selection process of normal internet-traffic
-    net[ 'client' ].cmd("ip route add default scope global nexthop via 10.0.1.1 dev client-eth0")
+    net[ 'client' ].cmdPrint("ip route add default scope global nexthop via 10.0.1.1 dev client-eth0")
 
     #configuration server
     # This creates two different routing tables, that we use based on the source-address.
-    net[ 'server' ].cmd("ip rule add from 10.0.2.2 table 1")
+    net[ 'server' ].cmdPrint("ip rule add from 10.0.2.2 table 1")
     
     # Configure the two different routing tables
-    net[ 'server' ].cmd("ip route add 10.0.2.0/24 dev server-eth0 scope link table 1")
-    net[ 'server' ].cmd("ip route add default via 10.0.2.1 dev server-eth0 table 1")
+    net[ 'server' ].cmdPrint("ip route add 10.0.2.0/24 dev server-eth0 scope link table 1")
+    net[ 'server' ].cmdPrint("ip route add default via 10.0.2.1 dev server-eth0 table 1")
 
     # default route for the selection process of normal internet-traffic
-    net[ 'server' ].cmd("ip route add default scope global nexthop via 10.0.2.1 dev server-eth0")
+    net[ 'server' ].cmdPrint("ip route add default scope global nexthop via 10.0.2.1 dev server-eth0")
 
     print "Dumping host connections"
 
@@ -155,36 +155,36 @@ def run():
     info( '*** Routing Table on Router:\n' )    
 
     #Run experiment
-    print net[ 'server' ].cmd("cd /home/" + USER + PATH_DIR)
-    print net[ 'server' ].cmd("pwd")
-    # print net[ 'server' ].cmd("./remove_files.sh")
+    print net[ 'server' ].cmdPrint("cd /home/" + USER + PATH_DIR)
+    print net[ 'server' ].cmdPrint("pwd")
+    # print net[ 'server' ].cmdPrint("./remove_files.sh")
 
-    net[ 'client' ].cmd("cd /home/" + USER + PATH_DIR)
-    # print net[ 'client' ].cmd("./remove_files.sh")
+    net[ 'client' ].cmdPrint("cd /home/" + USER + PATH_DIR)
+    # print net[ 'client' ].cmdPrint("./remove_files.sh")
 
-    net[ 'server' ].cmd("nice -n -10 src/dash/caddy/caddy -conf /home/" + USER + PATH_DIR + "Caddyfile -quic -mp >> out &")
+    net[ 'server' ].cmdPrint("nice -n -10 src/dash/caddy/caddy -conf /home/" + USER + PATH_DIR + "Caddyfile -quic -mp >> out &")
 
     
     for i in range(1,3):
-       net['client{0}'.format(i)].cmd("cd /home/" + USER + PATH_DIR) 
-       net['server{0}'.format(i)].cmd("cd /home/" + USER + PATH_DIR) 
+       net['client{0}'.format(i)].cmdPrint("cd /home/" + USER + PATH_DIR) 
+       net['server{0}'.format(i)].cmdPrint("cd /home/" + USER + PATH_DIR) 
 
 
     if with_background == 1:
 
-        net['client1'].cmd("nice -n -10 ./background_sbd.py 'CLIENT' 10.0.5.2 9999 1 2 1 3000 &") 
-        net['client2'].cmd("nice -n -10 ./background_sbd.py 'CLIENT' 10.0.7.2 9980 2 2 1 3000 &") 
+        net['client1'].cmdPrint("nice -n -10 ./background_sbd.py 'CLIENT' 10.0.5.2 9999 1 2 1 3000 &") 
+        net['client2'].cmdPrint("nice -n -10 ./background_sbd.py 'CLIENT' 10.0.7.2 9980 2 2 1 3000 &") 
 
-        net['server1'].cmd("nice -n -10 python tcp_core.py 10.0.6.2 9999 20000 1 SERVER TCP teste.pcap 1 &") 
-        net['server2'].cmd("nice -n -10 python tcp_core.py 10.0.8.2 9999 20000 1 SERVER TCP teste.pcap 1 &") 
+        net['server1'].cmdPrint("nice -n -10 python tcp_core.py 10.0.6.2 9999 20000 1 SERVER TCP teste.pcap 1 &") 
+        net['server2'].cmdPrint("nice -n -10 python tcp_core.py 10.0.8.2 9999 20000 1 SERVER TCP teste.pcap 1 &") 
         
         time.sleep(5)
 
-        print net['server1'].cmd("nice -n -10 ./background_sbd.py 'SERVER' 10.0.5.2 9999 1 2 1 3000 &") 
-        print net['server2'].cmd("nice -n -10 ./background_sbd.py 'SERVER' 10.0.7.2 9980 2 2 1 3000 &") 
+        print net['server1'].cmdPrint("nice -n -10 ./background_sbd.py 'SERVER' 10.0.5.2 9999 1 2 1 3000 &") 
+        print net['server2'].cmdPrint("nice -n -10 ./background_sbd.py 'SERVER' 10.0.7.2 9980 2 2 1 3000 &") 
 
-        print net['client1'].cmd("nice -n -10 python tcp_core.py 10.0.6.2 9999 20000 1 CLIENT TCP testec.pcap 1 &") 
-        print net['client2'].cmd("nice -n -10 python tcp_core.py 10.0.8.2 9999 20000 1 CLIENT TCP testec.pcap 1 &") 
+        print net['client1'].cmdPrint("nice -n -10 python tcp_core.py 10.0.6.2 9999 20000 1 CLIENT TCP testec.pcap 1 &") 
+        print net['client2'].cmdPrint("nice -n -10 python tcp_core.py 10.0.8.2 9999 20000 1 CLIENT TCP testec.pcap 1 &") 
 
     
     time.sleep(20)
@@ -203,7 +203,7 @@ def run():
         #file_mpd = '4k60fps.webm'
         #cmd = "nice -n -10 python3 src/AStream/dist/client/bulk_transfer.py -m https://10.0.2.2:4242/{0} -p '{1}' -q -mp >> {2} &".format(file_mpd, playback, file_out)
 
-    net[ 'client' ].cmd(cmd)
+    net[ 'client' ].cmdPrint(cmd)
 
 
     end = datetime.now()
