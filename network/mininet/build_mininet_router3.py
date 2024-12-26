@@ -209,7 +209,7 @@ def run():
     
 
     start = datetime.now()
-    file_out = 'data/out_{0}_{1}.txt'.format(playback, start.strftime("%Y-%m-%d.%H:%M:%S"))
+    file_out = 'log/out_{0}_{1}.txt'.format(playback, start.strftime("%Y-%m-%d.%H:%M:%S"))
     print(file_out)
 
     port_tcp_core1 = 14000
