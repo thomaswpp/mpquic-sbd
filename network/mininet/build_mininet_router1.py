@@ -20,9 +20,9 @@ with_background = 1
 number_of_interface_client = 2
 download = False
 playback = 'basic'
-PATH_DIR = "/Workspace/mpquic/mpquic-sbd/"
+PATH_DIR = "/Workspace/mpquic-sbd/"
 
-USER='thomas'
+USER='vagrant'
 
 
 TC_QDISC_RATE = 20
