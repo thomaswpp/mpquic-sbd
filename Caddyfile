@@ -1,12 +1,12 @@
 # Unsecure listener for debugging purposes
 http://10.0.2.2:4040 {
-    root /home/vagrant/Worskspace/video/
+    root /home/vagrant/Workspace/video/
     log stdout
 }
 
 # Secure listener, required for TLS and QUIC connections
 https://10.0.2.2:4242 {
-    root /home/vagrant/Worskspace/video/
+    root /home/vagrant/Workspace/video/
     tls self_signed
     log stdout
 }
