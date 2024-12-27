@@ -12,8 +12,7 @@ import xml.etree.ElementTree as ET
 def get_files(path):
 
     
-    d = {'90p': [], '180p': [], '360p': [], '540p': [], '720p':[], '7202p': [], '1080p': [], '1440p': [], '2560p': []}
-    # d = {'1440p': []}
+    d = {'240p': [], '360p': [], '480p': [], '720p':[], '7202p': [], '1080p': [], '10802p': [], '1440p': [], '14402p': [], '2560p': [], '25602p': []}
     for f in os.listdir(path):
         full_name = os.path.join(path, f)
 
