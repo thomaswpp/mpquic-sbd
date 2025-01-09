@@ -2,6 +2,7 @@
 
 import time
 import sys
+import argparse
 
 from mininet.topo import Topo
 from mininet.net import Mininet
@@ -12,7 +13,6 @@ from mininet.link import TCLink
 from mininet.util import dumpNodeConnections
 from datetime import datetime
 
-import argparse
 
 #http://recolog.blogspot.com/2016/02/emulating-networks-with-routers-using.html
  
