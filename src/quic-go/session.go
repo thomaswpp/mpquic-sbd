@@ -521,14 +521,15 @@ func (s *session) handlePacketImpl(p *receivedPacket) error {
 		p.rcvTime = time.Now()
 	}
 
-	
+	//SBD - compute OWD
+	// Filter (1): Partial metrics (see Section 4.5.2, page 9). Reference: https://doi.org/10.1145/3711862
 	diff_time := float64(s.timeStart.Sub(p.rcvTime))/float64(time.Millisecond)
 	if diff_time <= 0 {
-		s.numberInterval += 1
-		s.timeStart = p.rcvTime.Add(time.Millisecond * SBD_T_INTERVAL) 
-		s.state = true
+			s.numberInterval += 1
+			s.timeStart = p.rcvTime.Add(time.Millisecond * SBD_T_INTERVAL)
+			s.state = true
 	}
-
+	
 	s.lastNetworkActivityTime = p.rcvTime
 
 	/// XXX (QDC): see if this should be brought at path level too
@@ -562,9 +563,11 @@ func (s *session) handleFrames(fs []wire.Frame, p *path, rcvTime time.Time ) err
 		case *wire.StreamFrame:
 			err = s.handleStreamFrame(frame)
 			//SBD
-			hasStreamFrame = true
-			ets = frame.TimeStamp			
-			lossCount = append(lossCount, Loss{frame.LossCount, frame.PathID}) 
+			if err == nil {
+				hasStreamFrame = true
+				ets = frame.TimeStamp
+				lossCount = append(lossCount, Loss{frame.LossCount, frame.PathID})
+			}
 		case *wire.AckFrame:
 			err = s.handleAckFrame(frame)
 		case *wire.ConnectionCloseFrame:
@@ -618,20 +621,24 @@ func (s *session) handleFrames(fs []wire.Frame, p *path, rcvTime time.Time ) err
 			}
 		}
 	}
-
-
+	
 	if hasStreamFrame {
 		//SBD - compute OWD
-		ts_snd := timeStamp.DecodeADE(ets)
-		ts_rcv := (uint64(rcvTime.UnixNano()) / uint64(time.Microsecond))
-		if s.saveTsRcv1 {
-			s.tsRcv1 = rcvTime
-			s.saveTsRcv1 = false
+		// Filter (2): Skip impractical OWD measurements (see Section 4.5.2, page 9). Reference: https://doi.org/10.1145/3711862
+		// Such a filter would be hard-coded by discarding OWD > SBD_T_INTERVAL, i.e., outliers, as we did not account for retransmitted packets.
+		// Below, we address this by discarding OWD measurements of retransmitted packets, mitigating noisy measurements with outliers.
+		if p.lastRcvdPacketNumber >= p.receivedPacketHandler.GetLargestObservedPacket() {
+				ts_snd := timeStamp.DecodeADE(ets)
+				ts_rcv := (uint64(rcvTime.UnixNano()) / uint64(time.Microsecond))
+				if s.saveTsRcv1 {
+								s.tsRcv1 = rcvTime
+								s.saveTsRcv1 = false
+				}
+				owd := float64(ts_rcv - ts_snd) / 1000.0
+				sbdChanStruct <- Sbd{owd, p, lossCount, rcvTime}
 		}
-		owd := float64(ts_rcv - ts_snd) / 1000.0
-		sbdChanStruct <- Sbd{owd, p, lossCount, rcvTime}
 	}
-
+	
 	return nil
 }
 
