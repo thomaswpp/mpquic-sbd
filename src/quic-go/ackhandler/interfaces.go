@@ -42,4 +42,7 @@ type ReceivedPacketHandler interface {
 	GetClosePathFrame() *wire.ClosePathFrame
 
 	GetStatistics() uint64
+
+	//SBD
+	GetLargestObservedPacket() protocol.PacketNumber
 }
