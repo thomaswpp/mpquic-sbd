@@ -165,3 +165,8 @@ func (h *receivedPacketHandler) GetClosePathFrame() *wire.ClosePathFrame {
 }
 
 func (h *receivedPacketHandler) GetAlarmTimeout() time.Time { return h.ackAlarm }
+
+// SBD
+func (h *receivedPacketHandler) GetLargestObservedPacket() protocol.PacketNumber {
+        return h.largestObserved
+}
