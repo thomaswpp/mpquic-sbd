@@ -12,7 +12,7 @@ import random
 from datetime import datetime
 
 # usage:
-# ./mp_core_sbd_itg_background.py 'SERVER', client_ip, port, expnr, CONFIG, nr_bck_flow, timeout
+# ./background_sbd.py 'SERVER', client_ip, port, expnr, CONFIG, nr_bck_flow, timeout
 # SERVER or CLIENT:     string, NB: first start CLIENT for D-ITG, then SERVER
 # client_ip
 # port
@@ -24,6 +24,10 @@ from datetime import datetime
 TCP_FLOWS = int(sys.argv[6])
 UDP_FLOWS = int(sys.argv[6])
 TIMEOUT   = int(sys.argv[7]) # seconds
+
+USER = "vagrant"
+PATH_DIR = "/Workspace/mpquic-sbd/"
+PATH_LOG = PATH_DIR + "log/"
 
 def call_with_timeout(command, timeout):
     proc = subprocess.Popen(command)
@@ -382,15 +386,12 @@ if sys.argv[1] == 'SERVER':
     print "SERVER"
 
     try:
-        # script_file = tempfile.NamedTemporaryFile()
-        # generate_script(script_file, sys.argv[2], int(sys.argv[3]))
-        filename = sys.argv[8]
-        path = '/home/thomas/Workspace/mestrado/mpquic-sbd5/client/'
-        filename = path + filename
-        user='thomas'
-        recv_log_file = "/home/" + user + "/mp-core/mp-core-sbd-data/mpquic-sbd/" + RECVLOGFILE
-        send_log_file = "/home/" + user + "/mp-core/mp-core-sbd-data/mpquic-sbd/" + SENDLOGFILE
-        options =["/usr/local/bin/ITGSend", filename, '-l', send_log_file, '-x', recv_log_file]
+        script_file = tempfile.NamedTemporaryFile()
+        generate_script(script_file, sys.argv[2], int(sys.argv[3]))
+        
+        recv_log_file = "/home/" + USER + PATH_LOG + RECVLOGFILE
+        send_log_file = "/home/" + USER + PATH_LOG + SENDLOGFILE
+        options =["/usr/local/bin/ITGSend", script_file.name, '-l', send_log_file, '-x', recv_log_file]
 
         print options
         call_with_timeout(options, TIMEOUT+3) # kill 3 seconds later, itg has auto shutdown
