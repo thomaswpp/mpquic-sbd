@@ -104,73 +104,54 @@ func copyPaths(s *session) ([]protocol.PathID) {
     return arrPi
 }
 
-
 func computeAccuracy(s *session) {
-
-	mode  		:= 0 // 0 - shared, 1 - non-shared
-	count 		:= 0
-	congested 	:= false
-	var arr [3]int 
-
-
-	fmt.Println("Merge: =================")
-
-	s.pathsLock.RLock()
-	for pi, path := range s.paths {
-
-		if pi == 0 {
-			continue
-		}
-		g := path.group
-		arr[g]++
-		fmt.Println("Path: ", pi, g)
-	}
-	s.pathsLock.RUnlock()
+		count           := 0
+		congested       := false
+		var arr [3]int
 	
-	for _, a := range arr[1:] {
-		
-		if a != 0 {
-			congested = true
+		fmt.Println("Begin computeAccuracy: =================")
+		s.pathsLock.RLock()
+		for pi, path := range s.paths {
+			if pi == 0 {
+				continue
+			}
+			g := path.group
+			arr[g]++
+			fmt.Println("Path: ", pi, g)
+		}
+		s.pathsLock.RUnlock()
+
+		for _, a := range arr[1:] {
+			if a != 0 {
+				congested = true
+			}
+			if a >= 2 {
+				count++
+			}
 		}
 
-		if a >= 2 {
-			count++
-		}		
+		fmt.Println("Freq: ", arr)
+		switch count {
+			case 0:
+					sbd_count_diff++
+			case 1:
+					sbd_count_equal++
+		}
 
-	}
+		nsb_acc := sbd_count_diff / (sbd_count_equal + sbd_count_diff)
+		now := time.Now()
+		fmt.Println("NSB Accuracy - ", now, " - ", nsb_acc, sbd_count_diff, sbd_count_equal, sbd_count_diff)
 
-
-	fmt.Println("Freq: ", arr)
-
-	switch count {
-		case 0:
-			sbd_count_diff++
-		case 1:
-			sbd_count_equal++		
-	}
-
-	nsb_acc := sbd_count_diff / (sbd_count_equal + sbd_count_diff)
-	now := time.Now()
-	fmt.Println("General Accuracy - ", now, " - ", nsb_acc, sbd_count_equal, sbd_count_diff)
-
-	if congested {
-		sbd_count_acc++
-		//mode non-shared
-		if (mode == 1) {
-			// if count == 0 {
-			// 	sbd_accuracy++
-			// }
-
-		} else { //shared
-			if count >= 1 {
-				sbd_accuracy++
-			}
-		}		
-		fmt.Println("Accuracy - ", now, " - ", sbd_accuracy/sbd_count_acc, sbd_accuracy, sbd_count_acc)
-	}
-	fmt.Println("Fim Merge: =================")
+		if congested {
+				sbd_count_acc++
+				if count >= 1 {
+					sbd_accuracy++
+				}
+				sb_acc := sbd_accuracy/sbd_count_acc
+				fmt.Println("SB Accuracy - ", now, " - ", sb_acc, sbd_accuracy, sbd_count_acc)
+		}
+		fmt.Println("End computeAccuracy: =================")
 }
-
 
 func (sbd *Sbd) mergeObservations(s *session) {
 	
