@@ -625,8 +625,7 @@ func (s *session) handleFrames(fs []wire.Frame, p *path, rcvTime time.Time ) err
 	if hasStreamFrame {
 		//SBD - compute OWD
 		// Filter (2): Skip impractical OWD measurements (see Section 4.5.2, page 9). Reference: https://doi.org/10.1145/3711862
-		// Such a filter would be hard-coded by discarding OWD > SBD_T_INTERVAL, i.e., outliers, as we did not account for retransmitted packets.
-		// Below, we address this by discarding OWD measurements of retransmitted packets, mitigating noisy measurements with outliers.
+		// We address this by discarding OWD measurements of retransmitted packets, mitigating noisy measurements or potential outliers.
 		if p.lastRcvdPacketNumber >= p.receivedPacketHandler.GetLargestObservedPacket() {
 				ts_snd := timeStamp.DecodeADE(ets)
 				ts_rcv := (uint64(rcvTime.UnixNano()) / uint64(time.Microsecond))
